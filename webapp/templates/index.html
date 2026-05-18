@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HEXA Transmission Connectivity Agent</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --muted: #64748b;
+    --text: #0f172a; --primary: #2563eb; --primary-700: #1d4ed8;
+    --green: #16a34a; --green-bg: #dcfce7; --red: #dc2626; --red-bg: #fee2e2;
+    --amber: #d97706; --amber-bg: #fef3c7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); line-height: 1.5;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: linear-gradient(90deg, #0f172a, #1e3a8a);
+    color: white; padding: 18px 28px; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
+  header .sub { font-size: 12px; opacity: 0.8; }
+  header a { color: #93c5fd; text-decoration: none; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 800px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600; }
+  .card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .card .hint  { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .section { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; margin-top: 20px; }
+  .section h2 { margin: 0 0 12px; font-size: 16px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button, .btn {
+    background: var(--primary); color: white; border: 0; border-radius: 8px;
+    padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  button:hover { background: var(--primary-700); }
+  button.secondary { background: #475569; }
+  button.secondary:hover { background: #334155; }
+  button.ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+  button:disabled { opacity: 0.6; cursor: progress; }
+  input[type="text"], input[type="email"] {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; min-width: 280px;
+  }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; margin-right: 6px; }
+  .pill-green { background: var(--green-bg); color: var(--green); }
+  .pill-red   { background: var(--red-bg);   color: var(--red); }
+  .pill-amber { background: var(--amber-bg); color: var(--amber); }
+  .pill-blue  { background: #dbeafe;         color: var(--primary-700); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  th, td { padding: 7px 9px; border-bottom: 1px solid var(--border); text-align: left;
+    vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; position: sticky; top: 0;
+    cursor: pointer; user-select: none; }
+  tbody tr:hover { background: #f8fafc; }
+  .table-wrap { max-height: 480px; overflow: auto; border: 1px solid var(--border);
+    border-radius: 8px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  iframe.preview { width: 100%; height: 700px; border: 1px solid var(--border);
+    border-radius: 8px; background: white; }
+  pre.preview { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px;
+    overflow: auto; max-height: 600px; font-size: 12.5px; }
+  .toast { position: fixed; right: 18px; bottom: 18px; padding: 12px 16px;
+    border-radius: 8px; color: white; font-weight: 600; opacity: 0; transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease; z-index: 99; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok  { background: var(--green); }
+  .toast.err { background: var(--red); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tabs button { background: transparent; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .tabs button.active { background: var(--primary); color: white; border-color: var(--primary); }
+  code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>HEXA Transmission Connectivity Agent</h1>
+    <div class="sub">
+      Source: <a href="{{ source_url }}" target="_blank" rel="noopener">{{ source_url }}</a>
+      &middot; schedule:
+      <strong>{{ "%02d:%02d"|format(run_hour, run_minute) }} {{ timezone }}</strong>
+      {% if dry_run %} &middot; <span class="pill pill-amber">DRY_RUN</span>{% endif %}
+    </div>
+  </div>
+  <div class="sub">
+    Mail to: <code>{{ mail_to|join(", ") if mail_to else "(not configured)" }}</code>
+  </div>
+</header>
+
+<main>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Previous snapshot</div>
+      <div class="value" id="stat-prev">{{ previous_count }}</div>
+      <div class="hint">records from last successful run</div>
+    </div>
+    <div class="card">
+      <div class="label">Live scrape</div>
+      <div class="value" id="stat-live">—</div>
+      <div class="hint" id="stat-live-hint">click "Run scrape now"</div>
+    </div>
+    <div class="card">
+      <div class="label">Diff vs previous</div>
+      <div class="value" id="stat-diff">—</div>
+      <div class="hint" id="stat-diff-hint">added / removed</div>
+    </div>
+    <div class="card">
+      <div class="label">Pages crawled</div>
+      <div class="value" id="stat-pages">—</div>
+      <div class="hint" id="stat-pages-hint">CTUIL paginates 10 rows/page</div>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2>Actions</h2>
+    <div class="row">
+      <button id="btn-scrape">Run scrape now</button>
+      <button id="btn-scrape-quick" class="secondary">Quick (3 pages)</button>
+      <button id="btn-preview" class="ghost">Refresh email preview</button>
+      <button id="btn-commit" class="ghost">Save as 'previous snapshot'</button>
+      <span class="muted" id="status-text">Idle.</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Live data preview</h2>
+    <div class="row" style="margin-bottom:8px">
+      <input id="filter" type="text" placeholder="Filter by state / substation / applicant…">
+      <span class="muted" id="row-count"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead><tr>
+          <th data-key="expected_date">Expected date</th>
+          <th data-key="region">Region</th>
+          <th data-key="state">State</th>
+          <th data-key="substation">Substation</th>
+          <th data-key="application_id">Application ID</th>
+          <th data-key="applicant">Applicant</th>
+          <th data-key="generation_type">Type</th>
+          <th data-key="installed_capacity_mw">Installed (MW)</th>
+          <th data-key="deemed_gna_mw">Deemed GNA (MW)</th>
+        </tr></thead>
+        <tbody><tr><td colspan="9" class="muted">No data yet. Click "Run scrape now" above.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Email preview</h2>
+    <div class="tabs">
+      <button class="active" data-tab="html">HTML body</button>
+      <button data-tab="text">Plain-text body</button>
+    </div>
+    <iframe id="preview-html" class="preview" src="about:blank"></iframe>
+    <pre id="preview-text" class="preview" style="display:none">(load to view)</pre>
+  </section>
+
+  <section class="section">
+    <h2>Send a test email</h2>
+    <p class="muted">
+      Uses the SMTP credentials in your <code>.env</code> file. The message body is exactly
+      what the scheduled 11&nbsp;PM job will send. Subject is prefixed with <code>[TEST]</code>.
+    </p>
+    <div class="row">
+      <input id="test-recipients" type="text"
+             placeholder="Override recipients (comma-separated). Empty = use MAIL_TO from .env.">
+      <button id="btn-send-test">Send test email</button>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let cachedRecords = [];
+let sortKey = null;
+let sortDir = 1;
+
+const $ = (sel) => document.querySelector(sel);
+const toast = (msg, ok = true) => {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.className = "toast show " + (ok ? "ok" : "err");
+  setTimeout(() => el.classList.remove("show"), 3500);
+};
+
+async function scrape(force = true, maxPages = null) {
+  setBusy(true, "Scraping CTUIL…");
+  let url = "/api/scrape?force=" + (force ? "1" : "0");
+  if (maxPages) url += "&max_pages=" + maxPages;
+  try {
+    const r = await fetch(url, { method: "POST" });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "scrape failed");
+    cachedRecords = data.records;
+    $("#stat-live").textContent = data.record_count;
+    $("#stat-live-hint").textContent = data.total_displayed || "OK";
+    $("#stat-pages").textContent = data.pages_scraped;
+    $("#stat-pages-hint").textContent = "from " + new URL("{{ source_url }}").hostname;
+    renderTable();
+    await refreshDiff();
+    await refreshPreview();
+    setBusy(false, "Scrape complete – " + data.record_count + " records.");
+    toast("Scrape complete: " + data.record_count + " records");
+  } catch (e) {
+    setBusy(false, "Error: " + e.message);
+    toast("Scrape failed: " + e.message, false);
+  }
+}
+
+async function refreshDiff() {
+  const prevCount = parseInt($("#stat-prev").textContent || "0", 10);
+  if (!cachedRecords.length) { $("#stat-diff").textContent = "—"; return; }
+  const r = await fetch("/api/status");
+  const s = await r.json();
+  const liveCount = cachedRecords.length;
+  const delta = liveCount - prevCount;
+  $("#stat-diff").textContent = (delta >= 0 ? "+" : "") + delta;
+  $("#stat-diff-hint").textContent = (prevCount === 0)
+    ? "first run – no previous snapshot"
+    : "vs " + prevCount + " in saved snapshot";
+}
+
+function renderTable() {
+  const tbody = $("#data-table tbody");
+  const filter = ($("#filter").value || "").toLowerCase().trim();
+  let rows = cachedRecords.slice();
+  if (filter) {
+    rows = rows.filter(r =>
+      Object.values(r).some(v => String(v).toLowerCase().includes(filter))
+    );
+  }
+  if (sortKey) {
+    rows.sort((a, b) => String(a[sortKey] || "").localeCompare(String(b[sortKey] || "")) * sortDir);
+  }
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="muted">No rows match.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.slice(0, 500).map(r => `
+      <tr>
+        <td>${esc(r.expected_date)}</td>
+        <td>${esc(r.region)}</td>
+        <td>${esc(r.state)}</td>
+        <td>${esc(r.substation)}</td>
+        <td>${esc(r.application_id)}</td>
+        <td>${esc(r.applicant)}</td>
+        <td>${esc(r.generation_type)}</td>
+        <td>${esc(r.installed_capacity_mw)}</td>
+        <td>${esc(r.deemed_gna_mw)}</td>
+      </tr>`).join("");
+  }
+  $("#row-count").textContent =
+    "Showing " + Math.min(rows.length, 500) + " of " + cachedRecords.length +
+    (filter ? " (filtered)" : "");
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])
+  );
+}
+
+async function refreshPreview() {
+  const iframe = $("#preview-html");
+  iframe.src = "/api/email-preview?ts=" + Date.now();
+  const r = await fetch("/api/email-preview/text");
+  $("#preview-text").textContent = await r.text();
+}
+
+function setBusy(b, msg) {
+  for (const btn of document.querySelectorAll("button")) btn.disabled = b;
+  if (msg) $("#status-text").textContent = msg;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  $("#btn-scrape").onclick = () => scrape(true);
+  $("#btn-scrape-quick").onclick = () => scrape(true, 3);
+  $("#btn-preview").onclick = () => refreshPreview();
+
+  $("#btn-commit").onclick = async () => {
+    if (!cachedRecords.length) return toast("Run a scrape first.", false);
+    const r = await fetch("/api/commit-snapshot", { method: "POST" });
+    const data = await r.json();
+    if (data.ok) {
+      $("#stat-prev").textContent = data.count;
+      toast("Saved " + data.count + " records as the new previous snapshot.");
+      await refreshDiff();
+      await refreshPreview();
+    } else {
+      toast(data.error || "Failed to save", false);
+    }
+  };
+
+  $("#btn-send-test").onclick = async () => {
+    const recipients = $("#test-recipients").value;
+    setBusy(true, "Sending test email…");
+    try {
+      const r = await fetch("/api/send-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipients }),
+      });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || "send failed");
+      toast("Test email sent to " + (data.recipients || []).join(", "));
+      setBusy(false, "Test email sent.");
+    } catch (e) {
+      toast("Send failed: " + e.message, false);
+      setBusy(false, "Error: " + e.message);
+    }
+  };
+
+  $("#filter").addEventListener("input", renderTable);
+
+  // Auto-trigger a scrape if ?auto=quick|full appears in the URL
+  // (useful for screenshots, kiosks, and quick demos).
+  const auto = new URLSearchParams(location.search).get("auto");
+  if (auto === "quick") scrape(false, 3);       // use cache if warm
+  else if (auto === "full") scrape(false);
+
+  for (const th of document.querySelectorAll("#data-table th")) {
+    th.addEventListener("click", () => {
+      const k = th.dataset.key;
+      sortDir = (sortKey === k) ? -sortDir : 1;
+      sortKey = k;
+      renderTable();
+    });
+  }
+
+  document.querySelectorAll(".tabs button").forEach(b => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      const t = b.dataset.tab;
+      $("#preview-html").style.display = (t === "html") ? "block" : "none";
+      $("#preview-text").style.display = (t === "text") ? "block" : "none";
+    });
+  });
+});
+</script>
+</body>
+</html>
