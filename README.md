@@ -24,6 +24,34 @@ The same Python package can be deployed three ways:
 
 A `Dockerfile`, `docker-compose.yml` and a `systemd` unit are also included.
 
+There is **also a local Flask web dashboard** at `webapp/` you can open in
+your browser to scrape on demand, preview the email body live, and send
+a one-off test mail without waiting for the 11 PM trigger. See
+[Local web dashboard](#local-web-dashboard) below.
+
+## See what it looks like (no install required)
+
+Pre-rendered samples ship with the repo so you can preview everything in
+your browser before configuring SMTP:
+
+- **`samples/email-preview.html`** — open in any browser to see the exact
+  HTML email body that gets sent (full real data, 565 records).
+- **`samples/email-preview.txt`** — plain-text fallback body.
+- **`samples/email-subject.txt`** — the subject line.
+- **`samples/snapshot.json`** — the full real-life scrape (565 unique
+  records across 65 pages of `ctuil.in/connectivity-effective-list`).
+- **`samples/screenshots/`** — PNGs of the email and the localhost
+  dashboard:
+  - `email-preview.png`
+  - `dashboard-empty.png`
+  - `dashboard-with-data.png`
+
+To regenerate the samples against the live CTUIL site:
+
+```bash
+python scripts/build_sample.py
+```
+
 ---
 
 ## Quick start
@@ -50,6 +78,9 @@ python main.py run
 
 # 4. Long-running scheduler (daily 23:00 IST by default):
 python main.py schedule
+
+# 5. (Optional) Open the localhost dashboard:
+python -m webapp.app    # then visit http://localhost:5000
 ```
 
 If you want the scheduler to also fire one run on startup (useful for the
@@ -174,6 +205,29 @@ docker compose logs -f
 The container's entry point is `python main.py schedule`, so it stays
 alive and fires the job daily at the time configured in `.env`.
 
+### Local web dashboard
+
+Want to **see what the email looks like, scrape on demand, or send a test
+mail without waiting for 11 PM**? Run the bundled Flask dashboard:
+
+```bash
+python -m webapp.app
+# now open http://localhost:5000
+```
+
+The dashboard provides:
+
+- 4 KPI cards (previous snapshot, live count, day-over-day diff, pages crawled).
+- **Run scrape now** / **Quick (3 pages)** buttons.
+- A sortable, filterable preview table of the current data.
+- A live **Email preview** (HTML + plain-text tabs) — exactly what gets sent.
+- **Send test email** — uses the SMTP settings from your `.env`, prefixes
+  the subject with `[TEST]`.
+- **Save as 'previous snapshot'** — manually commit the cached scrape so
+  the diff in the next run is meaningful for demos.
+
+See `samples/screenshots/dashboard-with-data.png` for a preview.
+
 ### Option D – GitHub Actions (no server)
 
 Open the repo on GitHub and configure:
@@ -217,6 +271,16 @@ bullet-list layout for terminals and mail clients that don't render HTML.
 │   ├── scheduler.py    # APScheduler daily trigger
 │   ├── scraper.py      # CTUIL HTML parser (BeautifulSoup + lxml)
 │   └── storage.py      # JSON snapshot + diffing
+├── webapp/
+│   ├── app.py          # Flask server with /, /api/scrape, /api/email-preview, …
+│   └── templates/index.html
+├── samples/            # pre-rendered email + dashboard screenshots
+│   ├── email-preview.html / .txt / -subject.txt
+│   ├── snapshot.json   # full 565-record real-life scrape
+│   └── screenshots/*.png
+├── scripts/
+│   ├── build_sample.py     # regenerate samples/ from a live scrape
+│   └── screenshot_dashboard.py
 ├── tests/              # offline unit tests for parser/report/storage
 ├── deploy/
 │   └── hexa-connectivity-agent.service
