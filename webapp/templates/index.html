@@ -121,6 +121,93 @@
 
 <main>
 
+  <!-- ==================== ONBOARDING (first-time setup) ==================== -->
+  <section id="onboarding" class="section" style="display:none; border:2px solid #2563eb;
+           background: linear-gradient(180deg, #eff6ff, #ffffff);">
+    <h2 style="font-size:22px; margin:0 0 4px;">👋 Get started — set the sender in 60 seconds</h2>
+    <p class="desc" style="font-size:14px; margin:0 0 16px;">
+      Anyone can run this. Just enter the Gmail account (or any SMTP provider)
+      that should <b>send</b> the daily report, the recipient address, and the
+      time you want it delivered. Everything is saved to this server only —
+      no third-party API key, no LLM, no signup.
+    </p>
+
+    <details style="margin: 0 0 14px; padding: 10px 12px; border-radius: 8px;
+                    background: #fef3c7; border: 1px solid #fde68a; color: #78350f;
+                    font-size: 13px;">
+      <summary style="cursor:pointer; font-weight:600;">
+        ▸ How do I get a Gmail App Password? (1-minute walkthrough)
+      </summary>
+      <ol style="margin: 10px 0 0 18px; padding: 0;">
+        <li>Make sure 2-Step Verification is ON for your Google account:
+            <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">myaccount.google.com/security</a>.</li>
+        <li>Visit
+            <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>.</li>
+        <li>Pick app = <code>Mail</code>, device = <code>Other</code>, name it
+            "HEXA Bot", click Generate.</li>
+        <li>Copy the 16-character code (spaces don't matter) and paste it
+            into the <b>SMTP password</b> field below.</li>
+        <li>Use your <b>Gmail address</b> (e.g. <code>yourname@gmail.com</code>)
+            as the SMTP username.</li>
+      </ol>
+      <p style="margin: 10px 0 0;">
+        Not using Gmail? Just enter your provider's SMTP host/port instead
+        (Outlook = <code>smtp-mail.outlook.com:587</code>,
+        Zoho = <code>smtp.zoho.in:587</code>,
+        SendGrid = <code>smtp.sendgrid.net:587</code>, etc.).
+      </p>
+    </details>
+
+    <div class="grid-2">
+      <div>
+        <div class="field">
+          <label for="onb-smtp-user">Your Gmail / sender address</label>
+          <input id="onb-smtp-user" type="email" placeholder="yourname@gmail.com" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="onb-smtp-pass">Gmail App Password (16 characters)</label>
+          <input id="onb-smtp-pass" type="password" autocomplete="new-password"
+                 placeholder="xxxxxxxxxxxxxxxx">
+        </div>
+        <details style="font-size:13px; color:var(--muted);">
+          <summary style="cursor:pointer">Advanced SMTP host / port (optional)</summary>
+          <div class="field-row" style="margin-top:8px">
+            <div class="field" style="flex:2">
+              <label for="onb-smtp-host">SMTP host</label>
+              <input id="onb-smtp-host" type="text" placeholder="smtp.gmail.com">
+            </div>
+            <div class="field" style="flex:1; max-width:110px">
+              <label for="onb-smtp-port">Port</label>
+              <input id="onb-smtp-port" type="number" min="1" max="65535" placeholder="587">
+            </div>
+          </div>
+        </details>
+      </div>
+      <div>
+        <div class="field">
+          <label for="onb-to">Send the daily report to (comma-separated)</label>
+          <textarea id="onb-to" rows="3" placeholder="manager@example.com, you@example.com"></textarea>
+        </div>
+        <div class="field-row">
+          <div class="field" style="flex:0 0 160px">
+            <label for="onb-time">Daily time (24h)</label>
+            <input id="onb-time" type="time" step="60" value="23:00">
+          </div>
+          <div class="field">
+            <label for="onb-tz">Timezone</label>
+            <input id="onb-tz" type="text" value="Asia/Kolkata">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <button id="btn-onboard-save" class="big">✓ Save and arm the daily schedule</button>
+      <button id="btn-onboard-test" class="secondary">Send a test email now</button>
+      <span class="muted" id="onb-status"></span>
+    </div>
+  </section>
+
   <div id="config-banner" class="banner" style="display:none"></div>
 
   <div class="grid-stats">
@@ -375,16 +462,68 @@ async function loadStatus() {
     $("#stat-last-hint").textContent = s.last_outcome.message;
   }
   const banner = $("#config-banner");
-  if (!s.smtp_configured || !s.mail_to || s.mail_to.length === 0) {
-    banner.style.display = "block";
-    banner.className = "banner";
-    banner.innerHTML =
-      "Email is not fully configured yet. " +
-      "Fill in SMTP credentials, the From address, and at least one recipient in " +
-      "<b>Settings</b> below, then click <b>Save settings</b> to enable the daily mail.";
+  const onboarding = $("#onboarding");
+  const needsSetup = !s.smtp_configured || !s.mail_to || s.mail_to.length === 0;
+  if (needsSetup) {
+    onboarding.style.display = "block";
+    banner.style.display = "none";
   } else {
+    onboarding.style.display = "none";
     banner.style.display = "none";
   }
+}
+
+async function onboardingSave() {
+  const t = ($("#onb-time").value || "23:00").split(":");
+  const user = $("#onb-smtp-user").value.trim();
+  const pass = $("#onb-smtp-pass").value;
+  const to = $("#onb-to").value.trim();
+  if (!user) return toast("Enter your sender email.", false);
+  if (!pass) return toast("Enter your Gmail App Password.", false);
+  if (!to) return toast("Enter at least one recipient.", false);
+  const host = $("#onb-smtp-host").value.trim() || "smtp.gmail.com";
+  const port = parseInt($("#onb-smtp-port").value || "587", 10);
+  const payload = {
+    smtp_host: host,
+    smtp_port: port,
+    smtp_use_tls: (port !== 465),
+    smtp_username: user,
+    smtp_password: pass,
+    mail_from: user,
+    mail_to: to,
+    run_hour: parseInt(t[0] || "23", 10),
+    run_minute: parseInt(t[1] || "0", 10),
+    timezone: $("#onb-tz").value.trim() || "Asia/Kolkata",
+    schedule_enabled: true,
+  };
+  setBusy(true, "Saving…");
+  try {
+    const r = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "save failed");
+    $("#onb-status").textContent = "Saved. Next run: " +
+      (data.next_run ? new Date(data.next_run).toLocaleString() : "(disabled)");
+    toast("Set up complete. Click 'Send email now' or wait for the daily trigger.");
+    await loadStatus();
+    await loadSettings();
+    setBusy(false, "Ready.");
+  } catch (e) {
+    toast("Save failed: " + e.message, false);
+    setBusy(false, "Error: " + e.message);
+  }
+}
+
+async function onboardingTest() {
+  await onboardingSave();
+  const r = await fetch("/api/send-test", { method: "POST",
+    headers: {"Content-Type": "application/json"}, body: JSON.stringify({}) });
+  const data = await r.json();
+  if (data.ok) toast("Test email sent to " + (data.recipients || []).join(", "));
+  else toast("Test failed: " + (data.error || "?"), false);
 }
 
 async function loadSettings() {
@@ -532,6 +671,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btn-scrape-quick").onclick = () => scrape(true, 3);
   $("#btn-preview").onclick = () => refreshPreview();
   $("#btn-save").onclick = saveSettings;
+  $("#btn-onboard-save").onclick = onboardingSave;
+  $("#btn-onboard-test").onclick = onboardingTest;
 
   $("#btn-commit").onclick = async () => {
     if (!cachedRecords.length) return toast("Run a scrape first.", false);

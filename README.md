@@ -269,37 +269,112 @@ pre-generated full-data example lives in `samples/newsletter.json`.
 }
 ```
 
-### Option D – Render.com (one-click web service)
+### Option D – Render.com (recommended for "set and forget")
 
-[Render](https://render.com) hosts both the dashboard and the scheduler in
-**one** web service — same process, persistent disk, free TLS cert.
+There are two ways to do this on Render. Pick one:
 
-1. Fork this repo (or push it to your own GitHub).
-2. On <https://dashboard.render.com> → **New +** → **Blueprint** → connect
-   the repo. Render reads [`render.yaml`](render.yaml) and provisions:
+#### D1 – Web Service (manual setup, recommended if you want to tweak fields)
 
-   - a `web` service running `gunicorn -w 1 -k gthread webapp.app:app`
-   - a 1 GB persistent disk mounted at `/var/data` (holds
-     `settings.json` and `last_snapshot.json`)
+> ⚠️ **A Static Site won't work** — Static Site on Render only serves
+> HTML/CSS/JS, no Python backend. We need a real Python process (for
+> scraping, scheduling, and sending email), so the right Render service
+> type is **Web Service**.
 
-3. Once it's up, open the service URL and the dashboard appears.
-4. Click **Settings**, fill in SMTP host/port/username/password, the
-   sender, the recipients, and the daily run time. Hit **Save settings**.
-5. (Optional) Click **▶ Send email now** for an immediate first delivery.
+Step by step:
 
-That's it — at 23:00 in your configured timezone every day, the embedded
-scheduler runs `scrape → diff → render → email → persist`.
+1. **Push the code to your own GitHub repo** (fork or `git push` an
+   import). Render needs to read it.
+2. Open <https://dashboard.render.com> and click **New +** → **Web Service**.
+3. Connect your GitHub account if you haven't already, then pick this repo.
+4. Fill in the form like this:
 
-**Notes on plans / wake-up:**
+   | Field                   | Value                                                                                       |
+   | ----------------------- | ------------------------------------------------------------------------------------------- |
+   | **Name**                | `hexa-connectivity-agent` (or anything you like)                                            |
+   | **Region**              | `Singapore` (closest to India) — or whichever is closest to your recipients                 |
+   | **Branch**              | `main` (or `cursor/transmission-connectivity-agent-52b9` if you haven't merged the PR yet) |
+   | **Root Directory**      | *(leave blank — repo root)*                                                                 |
+   | **Runtime**             | `Python 3`                                                                                  |
+   | **Build Command**       | `pip install --upgrade pip && pip install -r requirements.txt`                              |
+   | **Start Command**       | `gunicorn -w 1 -k gthread --threads 4 --timeout 120 -b 0.0.0.0:$PORT webapp.app:app`        |
+   | **Instance Type**       | `Free` for testing · `Starter ($7/mo)` recommended (see plan notes below)                  |
+   | **Auto-Deploy**         | `Yes`                                                                                       |
 
-- **Starter ($7/mo)** keeps the container always-on, so the 11 PM trigger
-  fires reliably.
-- **Free plan** suspends the service after 15 min of inactivity. Either:
-  - Use a free uptime monitor (e.g. [cron-job.org](https://cron-job.org),
+5. Scroll to **Advanced** and add these **Environment Variables**
+   (these are just sensible defaults — every one of them can also be
+   changed from the UI later):
+
+   | Key              | Value                                              |
+   | ---------------- | -------------------------------------------------- |
+   | `PYTHON_VERSION` | `3.12.5`                                           |
+   | `TIMEZONE`       | `Asia/Kolkata`                                     |
+   | `SOURCE_URL`     | `https://www.ctuil.in/connectivity-effective-list` |
+   | `DATA_DIR`       | `/var/data` *(only if you also add a disk – see step 6)* |
+
+   You do **NOT** need to add `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM`,
+   `MAIL_TO`, `RUN_HOUR`, etc. as env vars — those are entered through the
+   dashboard's **Settings** panel after deploy. Anyone who can open the
+   URL can paste in their own Gmail App Password as the sender.
+
+6. **(Starter plan only)** Scroll to **Disks** → **Add Disk**:
+
+   | Field      | Value          |
+   | ---------- | -------------- |
+   | **Name**   | `hexa-data`    |
+   | **Mount path** | `/var/data` |
+   | **Size**   | `1 GB`         |
+
+   This makes `settings.json` and `last_snapshot.json` survive deploys
+   and restarts. Without a disk (Free plan), settings are wiped on every
+   deploy — you'd have to re-enter them after each push.
+
+7. Click **Create Web Service**. Render builds the container, runs
+   `pip install`, and starts gunicorn. First boot takes ~2 min.
+
+8. When the service shows **Live**, open the URL Render gives you
+   (e.g. `https://hexa-connectivity-agent.onrender.com`). You'll see a
+   big **"👋 Get started — set the sender in 60 seconds"** card with
+   inline instructions for generating a Gmail App Password. Fill in:
+
+   - Your Gmail address as the **sender**.
+   - The 16-character **App Password**.
+   - **Recipient** emails (comma-separated).
+   - **Daily time** (24-hour clock) and **timezone**.
+
+9. Click **✓ Save and arm the daily schedule**. Optionally click
+   **Send a test email now** to confirm it actually reaches the inbox.
+
+That's it — at the time you set every day, the embedded scheduler runs
+`scrape → diff → render → email → persist`.
+
+#### D2 – Blueprint (one-click via render.yaml)
+
+Same as D1 but Render reads [`render.yaml`](render.yaml) and fills in
+the form for you. Steps:
+
+1. On <https://dashboard.render.com> → **New +** → **Blueprint**.
+2. Pick the repo. **Branch** = whichever has `render.yaml` (must be
+   `main` or whichever branch the PR is merged into).
+3. Click **Apply** → wait for the build → open the URL → onboarding card
+   appears, fill SMTP/From/To/time → Save. Done.
+
+If you see "Blueprint file render.yaml not found on main branch", the
+branch you picked doesn't have `render.yaml` yet — either change the
+branch in the Blueprint form, or merge the PR to `main` first.
+
+#### Plan / wake-up notes
+
+- **Starter ($7/mo)** keeps the container always-on AND lets you attach
+  the persistent disk. The 11 PM trigger fires reliably. Recommended.
+- **Free plan** suspends the service after 15 min of inactivity AND
+  doesn't support persistent disks. Either:
+  - Use a free uptime monitor (e.g.
+    [cron-job.org](https://cron-job.org),
     [UptimeRobot](https://uptimerobot.com)) to ping
-    `https://<your-service>.onrender.com/healthz` every 5 minutes, or
-  - Switch to **Option E** (GitHub Actions) which is fully serverless and
-    free — see below.
+    `https://<your-service>.onrender.com/healthz` every 5 minutes
+    (keeps the dyno awake, but settings still reset on each redeploy), or
+  - Skip Render entirely and use **Option E** (GitHub Actions) which is
+    fully serverless and free — see below.
 
 ### Option E – GitHub Actions (no server)
 
