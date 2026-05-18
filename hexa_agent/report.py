@@ -1,6 +1,7 @@
 """Format scraped data + diffs into HTML and plain-text email bodies."""
 from __future__ import annotations
 
+from collections import OrderedDict
 from datetime import datetime
 from typing import Iterable, Sequence
 
@@ -11,6 +12,31 @@ from .scraper import ConnectivityRecord, ScrapeResult
 from .storage import Diff
 
 _env = Environment(autoescape=select_autoescape(["html", "xml"]))
+
+
+def _group_by_type(
+    records: Sequence[ConnectivityRecord],
+) -> "OrderedDict[str, list[ConnectivityRecord]]":
+    """Group records by their generation type, ordered by count desc.
+
+    Empty generation_type becomes "(unspecified)". Returned ordering:
+    largest group first, ties broken alphabetically – stable across runs.
+    """
+    grouped: dict[str, list[ConnectivityRecord]] = {}
+    for r in records:
+        key = (r.generation_type or "").strip() or "(unspecified)"
+        grouped.setdefault(key, []).append(r)
+    return OrderedDict(
+        sorted(grouped.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    )
+
+
+def _group_counts(records: Sequence[ConnectivityRecord]) -> list[dict]:
+    """Lightweight count-per-type list, used by build_newsletter()."""
+    return [
+        {"type": t, "count": len(rows)}
+        for t, rows in _group_by_type(records).items()
+    ]
 
 _HTML_TEMPLATE = _env.from_string(
     """\
@@ -25,10 +51,17 @@ _HTML_TEMPLATE = _env.from_string(
   .summary b { color: #111827; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
           font-size: 12px; font-weight: 600; margin-right: 6px; }
-  .pill-add  { background: #dcfce7; color: #166534; }
-  .pill-rem  { background: #fee2e2; color: #991b1b; }
-  .pill-keep { background: #e0e7ff; color: #3730a3; }
-  h2 { font-size: 15px; margin: 22px 0 8px; }
+  .pill-add   { background: #dcfce7; color: #166534; }
+  .pill-rem   { background: #fee2e2; color: #991b1b; }
+  .pill-keep  { background: #e0e7ff; color: #3730a3; }
+  .pill-type  { background: #fef3c7; color: #92400e; }
+  h2 { font-size: 16px; margin: 22px 0 6px; }
+  h3.group {
+    font-size: 13px; margin: 14px 0 6px; padding: 6px 10px;
+    background: #f8fafc; border-left: 4px solid #2563eb; border-radius: 4px;
+    color: #1e293b; font-weight: 700;
+  }
+  h3.group .count { color: #6b7280; font-weight: 500; margin-left: 6px; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
   th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left;
            vertical-align: top; }
@@ -38,6 +71,8 @@ _HTML_TEMPLATE = _env.from_string(
   .footer { color: #6b7280; font-size: 12px; margin-top: 24px;
             border-top: 1px solid #e5e7eb; padding-top: 10px; }
   a { color: #2563eb; text-decoration: none; }
+  .by-type-summary { margin: 4px 0 0; font-size: 13px; color: #475569; }
+  .by-type-summary .pill { font-size: 12px; }
 </style></head><body>
 
 <h1>Daily Transmission Connectivity Report</h1>
@@ -53,16 +88,30 @@ _HTML_TEMPLATE = _env.from_string(
   <span class="pill pill-rem">Removed: {{ diff.removed|length }}</span>
   <span class="pill pill-keep">Unchanged: {{ diff.unchanged_count }}</span>
   {% if pages_scraped %}&middot; pages scraped: {{ pages_scraped }}{% endif %}
+  {% if total_groups %}
+  <div class="by-type-summary">
+    By type:
+    {%- for g in total_groups %}
+      <span class="pill pill-type">{{ g.type }} &middot; {{ g.count }}</span>
+    {%- endfor %}
+  </div>
+  {% endif %}
 </div>
 
 {% if diff.added %}
 <h2>New entries ({{ diff.added|length }})</h2>
-{{ table(diff.added, "added") }}
+{% for type_name, rows in added_groups.items() %}
+  <h3 class="group">{{ type_name }} <span class="count">&middot; {{ rows|length }}</span></h3>
+  {{ table(rows, "added") }}
+{% endfor %}
 {% endif %}
 
 {% if diff.removed %}
 <h2>Removed since last run ({{ diff.removed|length }})</h2>
-{{ table(diff.removed, "removed") }}
+{% for type_name, rows in removed_groups.items() %}
+  <h3 class="group">{{ type_name }} <span class="count">&middot; {{ rows|length }}</span></h3>
+  {{ table(rows, "removed") }}
+{% endfor %}
 {% endif %}
 
 {% if not diff.added and not diff.removed %}
@@ -126,6 +175,9 @@ def render_html(
         pages_scraped=scrape.pages_scraped,
         records=scrape.records,
         diff=diff,
+        added_groups=_group_by_type(diff.added),
+        removed_groups=_group_by_type(diff.removed),
+        total_groups=_group_counts(scrape.records),
         table=_render_table,
     )
 
@@ -147,24 +199,30 @@ def render_text(
         f"Total: {len(scrape.records)} | New: {len(diff.added)} | "
         f"Removed: {len(diff.removed)} | Unchanged: {diff.unchanged_count}"
     )
+    total_groups = _group_counts(scrape.records)
+    if total_groups:
+        by_type = ", ".join(f"{g['type']} ({g['count']})" for g in total_groups)
+        lines.append(f"By type: {by_type}")
     lines.append("")
 
-    def _dump(title: str, rows: Iterable[ConnectivityRecord]) -> None:
+    def _dump_grouped(title: str, rows: Iterable[ConnectivityRecord]) -> None:
         rows = list(rows)
         if not rows:
             return
         lines.append(f"== {title} ({len(rows)}) ==")
-        for r in rows:
-            lines.append(
-                f"- [{r.expected_date}] {r.region}/{r.state} {r.substation} "
-                f"| {r.applicant} ({r.generation_type}) "
-                f"| {r.installed_capacity_mw} MW / GNA {r.deemed_gna_mw} MW "
-                f"| App {r.application_id}"
-            )
+        for type_name, group in _group_by_type(rows).items():
+            lines.append(f"\n  -- {type_name} ({len(group)}) --")
+            for r in group:
+                lines.append(
+                    f"  - [{r.expected_date}] {r.region}/{r.state} {r.substation} "
+                    f"| {r.applicant} "
+                    f"| {r.installed_capacity_mw} MW / GNA {r.deemed_gna_mw} MW "
+                    f"| App {r.application_id}"
+                )
         lines.append("")
 
-    _dump("New entries", diff.added)
-    _dump("Removed entries", diff.removed)
+    _dump_grouped("New entries", diff.added)
+    _dump_grouped("Removed entries", diff.removed)
 
     if not diff.added and not diff.removed:
         lines.append(
@@ -201,29 +259,38 @@ def build_newsletter(
     def _rows(records: Sequence[ConnectivityRecord]) -> list[dict]:
         return [r.to_dict() for r in records]
 
+    def _grouped_section(
+        section_id: str,
+        title: str,
+        records: Sequence[ConnectivityRecord],
+        highlight: str,
+    ) -> dict:
+        groups = []
+        for type_name, rows in _group_by_type(records).items():
+            groups.append({
+                "type": type_name,
+                "count": len(rows),
+                "rows": _rows(rows),
+            })
+        return {
+            "id": section_id,
+            "title": title,
+            "type": "grouped_table",
+            "columns": _NEWSLETTER_COLUMNS,
+            "groups": groups,
+            "rows": _rows(records),
+            "highlight": highlight,
+        }
+
     sections: list[dict] = []
     if diff.added:
-        sections.append(
-            {
-                "id": "new",
-                "title": f"New entries ({len(diff.added)})",
-                "type": "table",
-                "columns": _NEWSLETTER_COLUMNS,
-                "rows": _rows(diff.added),
-                "highlight": "added",
-            }
-        )
+        sections.append(_grouped_section(
+            "new", f"New entries ({len(diff.added)})", diff.added, "added"
+        ))
     if diff.removed:
-        sections.append(
-            {
-                "id": "removed",
-                "title": f"Removed entries ({len(diff.removed)})",
-                "type": "table",
-                "columns": _NEWSLETTER_COLUMNS,
-                "rows": _rows(diff.removed),
-                "highlight": "removed",
-            }
-        )
+        sections.append(_grouped_section(
+            "removed", f"Removed entries ({len(diff.removed)})", diff.removed, "removed"
+        ))
 
     return {
         "schema": "hexa.transmission-connectivity.v1",
@@ -241,6 +308,7 @@ def build_newsletter(
             "new_count": len(diff.added),
             "removed_count": len(diff.removed),
             "unchanged_count": diff.unchanged_count,
+            "by_type": _group_counts(scrape.records),
         },
         "sections": sections,
     }
