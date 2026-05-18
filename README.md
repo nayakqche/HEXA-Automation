@@ -188,6 +188,20 @@ runs at **17:30 UTC = 23:00 IST** every day, persists the previous
 snapshot via the Actions cache, and can also be triggered manually
 ("Run workflow" button).
 
+### Automatic Render deploys
+
+If the app is hosted on Render, enable deploys without clicking "Manual
+Deploy" each time:
+
+1. In Render, open the service and copy its **Deploy Hook** URL.
+2. In GitHub, add a repository secret named `RENDER_DEPLOY_HOOK_URL` with
+   that URL as the value.
+
+The [`Render Deploy`](.github/workflows/render-deploy.yml) workflow calls
+that hook on every push to `main`. If your Render service already has
+Auto-Deploy enabled for the GitHub repo, Render will also deploy directly
+after `main` is updated.
+
 ---
 
 ## What the email looks like
@@ -220,7 +234,9 @@ bullet-list layout for terminals and mail clients that don't render HTML.
 ├── tests/              # offline unit tests for parser/report/storage
 ├── deploy/
 │   └── hexa-connectivity-agent.service
-├── .github/workflows/daily-mail.yml
+├── .github/workflows/
+│   ├── daily-mail.yml
+│   └── render-deploy.yml
 ├── Dockerfile
 ├── docker-compose.yml
 ├── main.py             # CLI: run / schedule / scrape / test-mail
