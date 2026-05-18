@@ -238,16 +238,23 @@
     <h2>Actions</h2>
     <p class="desc">
       Preview the email before it's sent, or send it right now without waiting for the
-      daily trigger.
+      daily trigger. The full scrape pulls every record CTUIL publishes (~90s).
     </p>
     <div class="row">
       <button id="btn-run-now" class="big">▶ Send email now</button>
-      <button id="btn-scrape">Refresh data (full)</button>
-      <button id="btn-scrape-quick" class="secondary">Quick (3 pages)</button>
+      <button id="btn-scrape">Refresh data</button>
       <button id="btn-preview" class="ghost">Refresh email preview</button>
       <button id="btn-commit" class="ghost">Save as 'previous snapshot'</button>
       <span class="muted" id="status-text">Idle.</span>
     </div>
+    <details style="margin-top:12px; font-size:13px; color:var(--muted);">
+      <summary style="cursor:pointer">Debug tools</summary>
+      <div class="row" style="margin-top:8px">
+        <button id="btn-scrape-quick" class="secondary">
+          Quick partial scrape (3 pages — for testing only, diff numbers will be misleading)
+        </button>
+      </div>
+    </details>
   </section>
 
   <!-- ==================== SETTINGS ==================== -->
@@ -619,11 +626,23 @@ async function refreshDiff() {
   const prevCount = parseInt($("#stat-prev").textContent || "0", 10);
   if (!cachedRecords.length) { $("#stat-diff").textContent = "—"; return; }
   const liveCount = cachedRecords.length;
+  if (prevCount === 0) {
+    $("#stat-diff").textContent = "—";
+    $("#stat-diff-hint").textContent =
+      "first run — click 'Save as previous snapshot' to start tracking changes";
+    return;
+  }
+  // Detect scope mismatch: current scrape is < 60% of previous (likely a
+  // partial scrape compared against a full snapshot, or vice versa).
+  if (liveCount < 0.6 * prevCount) {
+    $("#stat-diff").textContent = "⚠";
+    $("#stat-diff-hint").textContent =
+      "scope mismatch — re-run 'Refresh data' then 'Save as previous snapshot' to reset";
+    return;
+  }
   const delta = liveCount - prevCount;
   $("#stat-diff").textContent = (delta >= 0 ? "+" : "") + delta;
-  $("#stat-diff-hint").textContent = (prevCount === 0)
-    ? "first run – no previous snapshot"
-    : "vs " + prevCount + " in saved snapshot";
+  $("#stat-diff-hint").textContent = "vs " + prevCount + " in saved snapshot";
 }
 
 function renderTable() {
