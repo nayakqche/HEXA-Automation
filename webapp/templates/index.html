@@ -22,11 +22,13 @@
     justify-content: space-between; flex-wrap: wrap; gap: 12px;
   }
   header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
-  header .sub { font-size: 12px; opacity: 0.8; }
+  header .sub { font-size: 12px; opacity: 0.85; }
   header a { color: #93c5fd; text-decoration: none; }
   main { max-width: 1180px; margin: 0 auto; padding: 24px; }
-  .grid { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
-  @media (max-width: 800px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  .grid-stats { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 800px) { .grid-stats { grid-template-columns: repeat(2, 1fr); } }
+  .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
   .card {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 10px; padding: 14px 16px;
@@ -37,7 +39,8 @@
   .card .hint  { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .section { background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 18px 20px; margin-top: 20px; }
-  .section h2 { margin: 0 0 12px; font-size: 16px; }
+  .section h2 { margin: 0 0 4px; font-size: 16px; }
+  .section .desc { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   button, .btn {
     background: var(--primary); color: white; border: 0; border-radius: 8px;
@@ -48,11 +51,23 @@
   button.secondary { background: #475569; }
   button.secondary:hover { background: #334155; }
   button.ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-  button:disabled { opacity: 0.6; cursor: progress; }
-  input[type="text"], input[type="email"] {
-    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
-    font-size: 14px; min-width: 280px;
+  button.big {
+    font-size: 15px; padding: 12px 18px;
+    background: linear-gradient(180deg, #16a34a, #15803d);
   }
+  button.big:hover { background: linear-gradient(180deg, #15803d, #166534); }
+  button.danger { background: var(--red); }
+  button:disabled { opacity: 0.6; cursor: progress; }
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="time"], select, textarea {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; font-family: inherit; width: 100%;
+  }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 4px; }
+  .field { margin-bottom: 12px; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row > .field { flex: 1; }
   .pill { display: inline-block; padding: 2px 9px; border-radius: 999px;
     font-size: 12px; font-weight: 600; margin-right: 6px; }
   .pill-green { background: var(--green-bg); color: var(--green); }
@@ -71,18 +86,27 @@
   iframe.preview { width: 100%; height: 700px; border: 1px solid var(--border);
     border-radius: 8px; background: white; }
   pre.preview { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px;
-    overflow: auto; max-height: 600px; font-size: 12.5px; }
+    overflow: auto; max-height: 700px; font-size: 12.5px; font-family:
+    "SF Mono", Consolas, Monaco, monospace; }
   .toast { position: fixed; right: 18px; bottom: 18px; padding: 12px 16px;
     border-radius: 8px; color: white; font-weight: 600; opacity: 0; transform: translateY(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease; z-index: 99; }
+    transition: opacity 0.2s ease, transform 0.2s ease; z-index: 99; max-width: 420px; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.ok  { background: var(--green); }
   .toast.err { background: var(--red); }
-  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
   .tabs button { background: transparent; color: var(--muted); border: 1px solid var(--border);
-    border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 500; }
   .tabs button.active { background: var(--primary); color: white; border-color: var(--primary); }
   code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+  .banner {
+    margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px;
+    border: 1px solid var(--amber-bg); background: #fffbeb; color: #78350f;
+  }
+  .banner.ok  { border-color: var(--green-bg); background: #f0fdf4; color: #14532d; }
+  .banner.err { border-color: var(--red-bg);   background: #fef2f2; color: #7f1d1d; }
+  .checkbox { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .checkbox input { width: auto; }
 </style>
 </head>
 <body>
@@ -90,30 +114,25 @@
 <header>
   <div>
     <h1>HEXA Transmission Connectivity Agent</h1>
-    <div class="sub">
-      Source: <a href="{{ source_url }}" target="_blank" rel="noopener">{{ source_url }}</a>
-      &middot; schedule:
-      <strong>{{ "%02d:%02d"|format(run_hour, run_minute) }} {{ timezone }}</strong>
-      {% if dry_run %} &middot; <span class="pill pill-amber">DRY_RUN</span>{% endif %}
-    </div>
+    <div class="sub" id="header-sub">Loading…</div>
   </div>
-  <div class="sub">
-    Mail to: <code>{{ mail_to|join(", ") if mail_to else "(not configured)" }}</code>
-  </div>
+  <div class="sub" id="header-next">Next run: —</div>
 </header>
 
 <main>
 
-  <div class="grid">
+  <div id="config-banner" class="banner" style="display:none"></div>
+
+  <div class="grid-stats">
     <div class="card">
       <div class="label">Previous snapshot</div>
-      <div class="value" id="stat-prev">{{ previous_count }}</div>
-      <div class="hint">records from last successful run</div>
+      <div class="value" id="stat-prev">—</div>
+      <div class="hint">records persisted from last run</div>
     </div>
     <div class="card">
       <div class="label">Live scrape</div>
       <div class="value" id="stat-live">—</div>
-      <div class="hint" id="stat-live-hint">click "Run scrape now"</div>
+      <div class="hint" id="stat-live-hint">click "Refresh data" below</div>
     </div>
     <div class="card">
       <div class="label">Diff vs previous</div>
@@ -121,16 +140,22 @@
       <div class="hint" id="stat-diff-hint">added / removed</div>
     </div>
     <div class="card">
-      <div class="label">Pages crawled</div>
-      <div class="value" id="stat-pages">—</div>
-      <div class="hint" id="stat-pages-hint">CTUIL paginates 10 rows/page</div>
+      <div class="label">Last scheduled run</div>
+      <div class="value" id="stat-last" style="font-size:14px; font-weight:600">never</div>
+      <div class="hint" id="stat-last-hint">success/fail status</div>
     </div>
   </div>
 
+  <!-- ==================== ACTIONS ==================== -->
   <section class="section">
     <h2>Actions</h2>
+    <p class="desc">
+      Preview the email before it's sent, or send it right now without waiting for the
+      daily trigger.
+    </p>
     <div class="row">
-      <button id="btn-scrape">Run scrape now</button>
+      <button id="btn-run-now" class="big">▶ Send email now</button>
+      <button id="btn-scrape">Refresh data (full)</button>
       <button id="btn-scrape-quick" class="secondary">Quick (3 pages)</button>
       <button id="btn-preview" class="ghost">Refresh email preview</button>
       <button id="btn-commit" class="ghost">Save as 'previous snapshot'</button>
@@ -138,10 +163,140 @@
     </div>
   </section>
 
+  <!-- ==================== SETTINGS ==================== -->
+  <section class="section" id="settings-section">
+    <h2>Settings</h2>
+    <p class="desc">
+      Everything below is saved to <code>data/settings.json</code> and used by the
+      embedded scheduler (no restart needed).
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <h3 style="margin:0 0 6px; font-size:14px; color:var(--muted); text-transform:uppercase;
+                   letter-spacing:0.04em;">Schedule</h3>
+        <div class="field-row">
+          <div class="field" style="flex:0 0 160px">
+            <label for="f-time">Daily time (24h)</label>
+            <input id="f-time" type="time" step="60">
+          </div>
+          <div class="field">
+            <label for="f-tz">Timezone</label>
+            <input id="f-tz" type="text" placeholder="e.g. Asia/Kolkata">
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input id="f-enabled" type="checkbox"> Schedule enabled
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input id="f-no-change" type="checkbox">
+            Send mail even when nothing changed since yesterday
+          </label>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input id="f-dry-run" type="checkbox">
+            Dry-run mode (don't actually send, just log)
+          </label>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 6px; font-size:14px; color:var(--muted); text-transform:uppercase;
+                   letter-spacing:0.04em;">Source &amp; filters</h3>
+        <div class="field">
+          <label for="f-source">Source URL</label>
+          <input id="f-source" type="text">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-region">Region filter</label>
+            <input id="f-region" type="text" placeholder="e.g. NR">
+          </div>
+          <div class="field">
+            <label for="f-state">State filter</label>
+            <input id="f-state" type="text" placeholder="e.g. Rajasthan">
+          </div>
+          <div class="field">
+            <label for="f-type">Type filter</label>
+            <input id="f-type" type="text" placeholder="e.g. Solar">
+          </div>
+        </div>
+        <div class="field" style="max-width:200px">
+          <label for="f-max-pages">Max pages (0 = all)</label>
+          <input id="f-max-pages" type="number" min="0" step="1">
+        </div>
+      </div>
+    </div>
+
+    <hr style="border:0; border-top:1px solid var(--border); margin:12px 0;">
+
+    <div class="grid-2">
+      <div>
+        <h3 style="margin:0 0 6px; font-size:14px; color:var(--muted); text-transform:uppercase;
+                   letter-spacing:0.04em;">SMTP – outgoing mail</h3>
+        <div class="field-row">
+          <div class="field" style="flex:2">
+            <label for="f-smtp-host">SMTP host</label>
+            <input id="f-smtp-host" type="text" placeholder="smtp.gmail.com">
+          </div>
+          <div class="field" style="flex:1; max-width:120px">
+            <label for="f-smtp-port">Port</label>
+            <input id="f-smtp-port" type="number" min="1" max="65535">
+          </div>
+        </div>
+        <div class="field">
+          <label class="checkbox">
+            <input id="f-smtp-tls" type="checkbox"> Use STARTTLS (uncheck only for port 465)
+          </label>
+        </div>
+        <div class="field">
+          <label for="f-smtp-user">SMTP username</label>
+          <input id="f-smtp-user" type="email" placeholder="your.bot@gmail.com" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f-smtp-pass">SMTP password
+            <span id="f-smtp-pass-set" class="pill pill-green" style="display:none">stored</span>
+          </label>
+          <input id="f-smtp-pass" type="password" autocomplete="new-password"
+                 placeholder="leave blank to keep existing">
+          <div class="muted" style="margin-top:4px">
+            Gmail users: generate an
+            <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">App Password</a>
+            (2-Step Verification must be on). The password is stored on disk in
+            <code>data/settings.json</code> and never returned to the browser.
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 6px; font-size:14px; color:var(--muted); text-transform:uppercase;
+                   letter-spacing:0.04em;">Email envelope</h3>
+        <div class="field">
+          <label for="f-from">From</label>
+          <input id="f-from" type="text" placeholder="HEXA Bot &lt;bot@example.com&gt;">
+        </div>
+        <div class="field">
+          <label for="f-to">To (comma-separated)</label>
+          <textarea id="f-to" rows="4" placeholder="you@example.com, manager@example.com"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button id="btn-save">Save settings</button>
+      <button id="btn-test-mail" class="secondary">Send test email now</button>
+      <span class="muted" id="settings-status"></span>
+    </div>
+  </section>
+
+  <!-- ==================== LIVE DATA ==================== -->
   <section class="section">
     <h2>Live data preview</h2>
     <div class="row" style="margin-bottom:8px">
-      <input id="filter" type="text" placeholder="Filter by state / substation / applicant…">
+      <input id="filter" type="text" style="max-width:380px"
+             placeholder="Filter by state / substation / applicant…">
       <span class="muted" id="row-count"></span>
     </div>
     <div class="table-wrap">
@@ -157,32 +312,26 @@
           <th data-key="installed_capacity_mw">Installed (MW)</th>
           <th data-key="deemed_gna_mw">Deemed GNA (MW)</th>
         </tr></thead>
-        <tbody><tr><td colspan="9" class="muted">No data yet. Click "Run scrape now" above.</td></tr></tbody>
+        <tbody><tr><td colspan="9" class="muted">No data yet. Click "Refresh data" above.</td></tr></tbody>
       </table>
     </div>
   </section>
 
+  <!-- ==================== PREVIEW ==================== -->
   <section class="section">
     <h2>Email preview</h2>
+    <p class="desc">
+      This is exactly what gets sent. Toggle between the rendered HTML body, the plain-text
+      fallback, and the structured newsletter JSON payload.
+    </p>
     <div class="tabs">
       <button class="active" data-tab="html">HTML body</button>
-      <button data-tab="text">Plain-text body</button>
+      <button data-tab="text">Plain text</button>
+      <button data-tab="json">Newsletter JSON</button>
     </div>
     <iframe id="preview-html" class="preview" src="about:blank"></iframe>
     <pre id="preview-text" class="preview" style="display:none">(load to view)</pre>
-  </section>
-
-  <section class="section">
-    <h2>Send a test email</h2>
-    <p class="muted">
-      Uses the SMTP credentials in your <code>.env</code> file. The message body is exactly
-      what the scheduled 11&nbsp;PM job will send. Subject is prefixed with <code>[TEST]</code>.
-    </p>
-    <div class="row">
-      <input id="test-recipients" type="text"
-             placeholder="Override recipients (comma-separated). Empty = use MAIL_TO from .env.">
-      <button id="btn-send-test">Send test email</button>
-    </div>
+    <pre id="preview-json" class="preview" style="display:none">(load to view)</pre>
   </section>
 
 </main>
@@ -199,8 +348,111 @@ const toast = (msg, ok = true) => {
   const el = $("#toast");
   el.textContent = msg;
   el.className = "toast show " + (ok ? "ok" : "err");
-  setTimeout(() => el.classList.remove("show"), 3500);
+  setTimeout(() => el.classList.remove("show"), 4000);
 };
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function setBusy(b, msg) {
+  for (const btn of document.querySelectorAll("button")) btn.disabled = b;
+  if (msg !== undefined) $("#status-text").textContent = msg;
+}
+
+async function loadStatus() {
+  const r = await fetch("/api/status");
+  const s = await r.json();
+  $("#header-sub").innerHTML =
+    "Source: <a href='" + esc(s.source_url) + "' target='_blank'>" + esc(s.source_url) + "</a>" +
+    " · daily " + esc(s.schedule) + " " + esc(s.timezone) +
+    (s.schedule_enabled ? "" : " · <span class='pill pill-amber'>SCHEDULE OFF</span>");
+  $("#header-next").textContent = "Next run: " +
+    (s.schedule_enabled && s.next_run ? new Date(s.next_run).toLocaleString() : "(disabled)");
+  $("#stat-prev").textContent = s.previous_snapshot_count;
+  if (s.last_outcome) {
+    $("#stat-last").textContent =
+      (s.last_outcome.email_sent ? "✓ sent " : "✗ ") +
+      "(" + s.last_outcome.record_count + " records, +" + s.last_outcome.added + ")";
+    $("#stat-last-hint").textContent = s.last_outcome.message;
+  }
+  const banner = $("#config-banner");
+  if (!s.smtp_configured || !s.mail_to || s.mail_to.length === 0) {
+    banner.style.display = "block";
+    banner.className = "banner";
+    banner.innerHTML =
+      "Email is not fully configured yet. " +
+      "Fill in SMTP credentials, the From address, and at least one recipient in " +
+      "<b>Settings</b> below, then click <b>Save settings</b> to enable the daily mail.";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+async function loadSettings() {
+  const r = await fetch("/api/settings");
+  const s = await r.json();
+  $("#f-time").value =
+    String(s.run_hour).padStart(2, "0") + ":" + String(s.run_minute).padStart(2, "0");
+  $("#f-tz").value = s.timezone;
+  $("#f-enabled").checked = !!s.schedule_enabled;
+  $("#f-no-change").checked = !!s.send_on_no_change;
+  $("#f-dry-run").checked = !!s.dry_run;
+  $("#f-source").value = s.source_url;
+  $("#f-region").value = s.filter_region || "";
+  $("#f-state").value = s.filter_state || "";
+  $("#f-type").value = s.filter_type || "";
+  $("#f-max-pages").value = s.max_pages ?? 0;
+  $("#f-smtp-host").value = s.smtp_host || "";
+  $("#f-smtp-port").value = s.smtp_port || 587;
+  $("#f-smtp-tls").checked = !!s.smtp_use_tls;
+  $("#f-smtp-user").value = s.smtp_username || "";
+  $("#f-smtp-pass").value = "";
+  $("#f-smtp-pass-set").style.display = s.smtp_password_set ? "inline-block" : "none";
+  $("#f-from").value = s.mail_from || "";
+  $("#f-to").value = (s.mail_to || []).join(", ");
+}
+
+async function saveSettings() {
+  const t = ($("#f-time").value || "23:00").split(":");
+  const payload = {
+    source_url: $("#f-source").value.trim(),
+    max_pages: parseInt($("#f-max-pages").value || "0", 10),
+    filter_region: $("#f-region").value.trim(),
+    filter_state: $("#f-state").value.trim(),
+    filter_type: $("#f-type").value.trim(),
+    smtp_host: $("#f-smtp-host").value.trim(),
+    smtp_port: parseInt($("#f-smtp-port").value || "587", 10),
+    smtp_use_tls: $("#f-smtp-tls").checked,
+    smtp_username: $("#f-smtp-user").value.trim(),
+    smtp_password: $("#f-smtp-pass").value,
+    mail_from: $("#f-from").value.trim(),
+    mail_to: $("#f-to").value,
+    run_hour: parseInt(t[0] || "23", 10),
+    run_minute: parseInt(t[1] || "0", 10),
+    timezone: $("#f-tz").value.trim() || "Asia/Kolkata",
+    schedule_enabled: $("#f-enabled").checked,
+    send_on_no_change: $("#f-no-change").checked,
+    dry_run: $("#f-dry-run").checked,
+  };
+  setBusy(true, "Saving settings…");
+  try {
+    const r = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || "save failed");
+    await loadSettings();
+    await loadStatus();
+    $("#settings-status").textContent = "Saved. Next run: " +
+      (data.next_run ? new Date(data.next_run).toLocaleString() : "(disabled)");
+    toast("Settings saved");
+    setBusy(false, "Settings saved.");
+  } catch (e) {
+    toast("Save failed: " + e.message, false);
+    setBusy(false, "Error: " + e.message);
+  }
+}
 
 async function scrape(force = true, maxPages = null) {
   setBusy(true, "Scraping CTUIL…");
@@ -213,8 +465,6 @@ async function scrape(force = true, maxPages = null) {
     cachedRecords = data.records;
     $("#stat-live").textContent = data.record_count;
     $("#stat-live-hint").textContent = data.total_displayed || "OK";
-    $("#stat-pages").textContent = data.pages_scraped;
-    $("#stat-pages-hint").textContent = "from " + new URL("{{ source_url }}").hostname;
     renderTable();
     await refreshDiff();
     await refreshPreview();
@@ -229,8 +479,6 @@ async function scrape(force = true, maxPages = null) {
 async function refreshDiff() {
   const prevCount = parseInt($("#stat-prev").textContent || "0", 10);
   if (!cachedRecords.length) { $("#stat-diff").textContent = "—"; return; }
-  const r = await fetch("/api/status");
-  const s = await r.json();
   const liveCount = cachedRecords.length;
   const delta = liveCount - prevCount;
   $("#stat-diff").textContent = (delta >= 0 ? "+" : "") + delta;
@@ -272,28 +520,18 @@ function renderTable() {
     (filter ? " (filtered)" : "");
 }
 
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c =>
-    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])
-  );
-}
-
 async function refreshPreview() {
-  const iframe = $("#preview-html");
-  iframe.src = "/api/email-preview?ts=" + Date.now();
-  const r = await fetch("/api/email-preview/text");
-  $("#preview-text").textContent = await r.text();
-}
-
-function setBusy(b, msg) {
-  for (const btn of document.querySelectorAll("button")) btn.disabled = b;
-  if (msg) $("#status-text").textContent = msg;
+  $("#preview-html").src = "/api/email-preview?ts=" + Date.now();
+  fetch("/api/email-preview/text").then(r => r.text()).then(t => $("#preview-text").textContent = t);
+  fetch("/api/newsletter.json").then(r => r.json())
+    .then(j => $("#preview-json").textContent = JSON.stringify(j, null, 2));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   $("#btn-scrape").onclick = () => scrape(true);
   $("#btn-scrape-quick").onclick = () => scrape(true, 3);
   $("#btn-preview").onclick = () => refreshPreview();
+  $("#btn-save").onclick = saveSettings;
 
   $("#btn-commit").onclick = async () => {
     if (!cachedRecords.length) return toast("Run a scrape first.", false);
@@ -309,15 +547,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  $("#btn-send-test").onclick = async () => {
-    const recipients = $("#test-recipients").value;
+  $("#btn-run-now").onclick = async () => {
+    if (!confirm("Send the connectivity report email NOW to all configured recipients?")) return;
+    setBusy(true, "Running full scrape + sending email…");
+    try {
+      const r = await fetch("/api/run-now", { method: "POST",
+        headers: {"Content-Type": "application/json"}, body: JSON.stringify({}) });
+      const data = await r.json();
+      if (!data.ok) throw new Error((data.outcome && data.outcome.message) || data.error || "failed");
+      toast("Email sent: " + data.outcome.subject);
+      setBusy(false, "Sent.");
+      await loadStatus();
+      await refreshPreview();
+    } catch (e) {
+      toast("Send failed: " + e.message, false);
+      setBusy(false, "Error: " + e.message);
+    }
+  };
+
+  $("#btn-test-mail").onclick = async () => {
     setBusy(true, "Sending test email…");
     try {
-      const r = await fetch("/api/send-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipients }),
-      });
+      const r = await fetch("/api/send-test", { method: "POST",
+        headers: {"Content-Type": "application/json"}, body: JSON.stringify({}) });
       const data = await r.json();
       if (!data.ok) throw new Error(data.error || "send failed");
       toast("Test email sent to " + (data.recipients || []).join(", "));
@@ -329,12 +581,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   $("#filter").addEventListener("input", renderTable);
-
-  // Auto-trigger a scrape if ?auto=quick|full appears in the URL
-  // (useful for screenshots, kiosks, and quick demos).
-  const auto = new URLSearchParams(location.search).get("auto");
-  if (auto === "quick") scrape(false, 3);       // use cache if warm
-  else if (auto === "full") scrape(false);
 
   for (const th of document.querySelectorAll("#data-table th")) {
     th.addEventListener("click", () => {
@@ -352,8 +598,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const t = b.dataset.tab;
       $("#preview-html").style.display = (t === "html") ? "block" : "none";
       $("#preview-text").style.display = (t === "text") ? "block" : "none";
+      $("#preview-json").style.display = (t === "json") ? "block" : "none";
     });
   });
+
+  loadStatus();
+  loadSettings();
+
+  // Auto-trigger a scrape if ?auto=quick|full appears in the URL.
+  const auto = new URLSearchParams(location.search).get("auto");
+  if (auto === "quick") scrape(false, 3);
+  else if (auto === "full") scrape(false);
 });
 </script>
 </body>
