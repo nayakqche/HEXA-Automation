@@ -88,7 +88,23 @@ def test_build_newsletter_returns_structured_payload():
     section_ids = [s["id"] for s in payload["sections"]]
     assert "new" in section_ids
     assert "removed" in section_ids
-    assert "snapshot" in section_ids
-    snapshot_section = next(s for s in payload["sections"] if s["id"] == "snapshot")
-    assert snapshot_section["rows"][0]["application_id"] in {"A1", "A2"}
+    # The 'snapshot' preview section was intentionally removed; the email
+    # body now contains only diff sections plus a 'no changes' line.
+    assert "snapshot" not in section_ids
     assert payload["subject"].startswith("Transmission Connectivity")
+
+
+def test_build_newsletter_empty_when_no_diff():
+    scrape = ScrapeResult(
+        source_url="https://x.test/list",
+        records=[_rec("A1"), _rec("A2")],
+        pages_scraped=1,
+    )
+    diff = diff_snapshots(scrape.records, scrape.records)  # identical
+    now = datetime(2026, 5, 18, 23, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+
+    payload = build_newsletter(scrape=scrape, diff=diff, generated_at=now)
+    assert payload["sections"] == []
+    assert payload["summary"]["new_count"] == 0
+    assert payload["summary"]["removed_count"] == 0
+    assert payload["summary"]["unchanged_count"] == 2
