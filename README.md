@@ -11,7 +11,7 @@ By default it targets the Central Transmission Utility of India Limited
 
 Each daily report contains:
 
-- The full current snapshot (with a preview of the first 25 rows).
+- The full current snapshot.
 - **What changed since yesterday** — added and removed connectivity entries.
 - Region / state / generation-type filters (optional).
 - A clean HTML email plus a plain-text fallback.
@@ -197,7 +197,7 @@ The HTML body contains:
 - A header pill row: **Total today**, **New**, **Removed**, **Unchanged**.
 - A **New entries** table (green background) — added since yesterday.
 - A **Removed** table (red background) — entries that disappeared.
-- A **Current snapshot** table — the first 25 records of today's data.
+- A **Current snapshot** table — all records from today's data.
 
 The plain-text alternative carries the same information in a simple
 bullet-list layout for terminals and mail clients that don't render HTML.
