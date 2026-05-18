@@ -5,7 +5,12 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from hexa_agent.report import build_subject, render_html, render_text
+from hexa_agent.report import (
+    build_newsletter,
+    build_subject,
+    render_html,
+    render_text,
+)
 from hexa_agent.scraper import ConnectivityRecord, ScrapeResult
 from hexa_agent.storage import diff_snapshots, load_snapshot, save_snapshot
 
@@ -63,3 +68,27 @@ def test_render_html_and_text_contain_key_values():
     subject = build_subject(scrape, diff, now)
     assert "2026-05-18" in subject
     assert "2 records" in subject
+
+
+def test_build_newsletter_returns_structured_payload():
+    scrape = ScrapeResult(
+        source_url="https://x.test/list",
+        records=[_rec("A1"), _rec("A2")],
+        pages_scraped=1,
+        total_displayed="Displaying 1 to 2 of 2",
+    )
+    diff = diff_snapshots([_rec("A0")], scrape.records)
+    now = datetime(2026, 5, 18, 23, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+
+    payload = build_newsletter(scrape=scrape, diff=diff, generated_at=now)
+    assert payload["schema"] == "hexa.transmission-connectivity.v1"
+    assert payload["summary"]["total_records"] == 2
+    assert payload["summary"]["new_count"] == 2
+    assert payload["summary"]["removed_count"] == 1
+    section_ids = [s["id"] for s in payload["sections"]]
+    assert "new" in section_ids
+    assert "removed" in section_ids
+    assert "snapshot" in section_ids
+    snapshot_section = next(s for s in payload["sections"] if s["id"] == "snapshot")
+    assert snapshot_section["rows"][0]["application_id"] in {"A1", "A2"}
+    assert payload["subject"].startswith("Transmission Connectivity")

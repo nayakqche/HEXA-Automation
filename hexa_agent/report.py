@@ -180,3 +180,90 @@ def build_subject(scrape: ScrapeResult, diff: Diff, generated_at: datetime) -> s
     if diff.added or diff.removed:
         parts.append(f"+{len(diff.added)}/-{len(diff.removed)}")
     return " | ".join(parts)
+
+
+def build_newsletter(
+    *,
+    scrape: ScrapeResult,
+    diff: Diff,
+    generated_at: datetime,
+    preview_limit: int = 25,
+) -> dict:
+    """Return a newsletter-style structured JSON payload for the same data.
+
+    The shape is intentionally generic so it can be re-rendered into HTML,
+    Slack blocks, a static site, or piped into another newsletter platform.
+    """
+
+    def _rows(records: Sequence[ConnectivityRecord]) -> list[dict]:
+        return [r.to_dict() for r in records]
+
+    sections: list[dict] = []
+    if diff.added:
+        sections.append(
+            {
+                "id": "new",
+                "title": f"New entries ({len(diff.added)})",
+                "type": "table",
+                "columns": _NEWSLETTER_COLUMNS,
+                "rows": _rows(diff.added),
+                "highlight": "added",
+            }
+        )
+    if diff.removed:
+        sections.append(
+            {
+                "id": "removed",
+                "title": f"Removed entries ({len(diff.removed)})",
+                "type": "table",
+                "columns": _NEWSLETTER_COLUMNS,
+                "rows": _rows(diff.removed),
+                "highlight": "removed",
+            }
+        )
+    preview = list(scrape.records[:preview_limit])
+    sections.append(
+        {
+            "id": "snapshot",
+            "title": (
+                f"Current snapshot — first {len(preview)} of {len(scrape.records)}"
+            ),
+            "type": "table",
+            "columns": _NEWSLETTER_COLUMNS,
+            "rows": _rows(preview),
+            "highlight": "neutral",
+        }
+    )
+
+    return {
+        "schema": "hexa.transmission-connectivity.v1",
+        "title": "Daily Transmission Connectivity Report",
+        "generated_at": generated_at.isoformat(),
+        "subject": build_subject(scrape, diff, generated_at),
+        "source": {
+            "name": "CTUIL – Central Transmission Utility of India Limited",
+            "url": scrape.source_url,
+            "page_note": scrape.total_displayed,
+            "pages_scraped": scrape.pages_scraped,
+        },
+        "summary": {
+            "total_records": len(scrape.records),
+            "new_count": len(diff.added),
+            "removed_count": len(diff.removed),
+            "unchanged_count": diff.unchanged_count,
+        },
+        "sections": sections,
+    }
+
+
+_NEWSLETTER_COLUMNS = [
+    {"key": "expected_date", "label": "Expected date"},
+    {"key": "region", "label": "Region"},
+    {"key": "state", "label": "State"},
+    {"key": "substation", "label": "Substation"},
+    {"key": "application_id", "label": "Application ID"},
+    {"key": "applicant", "label": "Applicant"},
+    {"key": "generation_type", "label": "Type"},
+    {"key": "installed_capacity_mw", "label": "Installed (MW)"},
+    {"key": "deemed_gna_mw", "label": "Deemed GNA (MW)"},
+]

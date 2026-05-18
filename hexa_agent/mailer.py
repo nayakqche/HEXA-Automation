@@ -5,19 +5,43 @@ import logging
 import smtplib
 import ssl
 from email.message import EmailMessage
-from typing import Sequence
-
-from .config import Config
+from typing import Protocol, Sequence
 
 logger = logging.getLogger(__name__)
+
+
+class _MailConfig(Protocol):
+    smtp_host: str
+    smtp_port: int
+    smtp_use_tls: bool
+    smtp_username: str
+    smtp_password: str
+    mail_from: str
+
+    @property
+    def mail_to(self) -> list[str]:  # pragma: no cover - structural typing
+        ...
 
 
 class MailerError(RuntimeError):
     pass
 
 
+def _validate(cfg: _MailConfig) -> list[str]:
+    errors: list[str] = []
+    if not cfg.smtp_username:
+        errors.append("SMTP username is required")
+    if not cfg.smtp_password:
+        errors.append("SMTP password is required")
+    if not cfg.mail_from:
+        errors.append("Mail-From is required")
+    if not cfg.mail_to:
+        errors.append("At least one recipient is required")
+    return errors
+
+
 def send_email(
-    cfg: Config,
+    cfg: _MailConfig,
     *,
     subject: str,
     text_body: str,
@@ -26,15 +50,18 @@ def send_email(
 ) -> None:
     """Send a multipart email using the SMTP settings in ``cfg``.
 
-    Raises MailerError if validation or sending fails.
+    ``cfg`` can be either a :class:`hexa_agent.config.Config` or a
+    :class:`hexa_agent.settings.Settings`; both expose the same fields.
+    Raises ``MailerError`` if validation or sending fails.
     """
-    errors = cfg.validate_for_email()
+    errors = _validate(cfg)
     if errors:
         raise MailerError("Email config invalid: " + "; ".join(errors))
 
-    to_list = list(recipients) if recipients else cfg.mail_to
+    mail_to = cfg.mail_to if not isinstance(cfg.mail_to, str) else [cfg.mail_to]  # type: ignore[unreachable]
+    to_list = list(recipients) if recipients else list(mail_to)
     if not to_list:
-        raise MailerError("No recipients configured (MAIL_TO is empty).")
+        raise MailerError("No recipients configured.")
 
     msg = EmailMessage()
     msg["Subject"] = subject

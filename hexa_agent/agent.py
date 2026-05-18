@@ -4,15 +4,19 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Union
 from zoneinfo import ZoneInfo
 
 from .config import Config, load_config
 from .mailer import MailerError, send_email
 from .report import build_subject, render_html, render_text
 from .scraper import ScraperError, scrape_connectivity
+from .settings import Settings
 from .storage import diff_snapshots, load_snapshot, save_snapshot
 
 logger = logging.getLogger(__name__)
+
+ConfigLike = Union[Config, Settings]
 
 
 @dataclass
@@ -23,22 +27,55 @@ class RunOutcome:
     removed: int
     email_sent: bool
     message: str
+    subject: str = ""
 
 
-def _now(cfg: Config) -> datetime:
+def _now(timezone: str) -> datetime:
     try:
-        tz = ZoneInfo(cfg.timezone)
+        tz = ZoneInfo(timezone)
     except Exception:  # noqa: BLE001
-        logger.warning("Unknown TIMEZONE=%r – falling back to UTC", cfg.timezone)
+        logger.warning("Unknown timezone=%r – falling back to UTC", timezone)
         tz = ZoneInfo("UTC")
     return datetime.now(tz)
 
 
-def run_once(cfg: Config | None = None) -> RunOutcome:
-    """Execute one full scrape-and-mail cycle."""
-    cfg = cfg or load_config()
-    generated_at = _now(cfg)
+def run_once(
+    cfg: ConfigLike | None = None,
+    *,
+    data_dir=None,
+    force_send: bool = False,
+    skip_persist: bool = False,
+) -> RunOutcome:
+    """Execute one full scrape-and-mail cycle.
 
+    Parameters
+    ----------
+    cfg:
+        Either a :class:`Config` (loaded from .env) or a runtime
+        :class:`Settings` object. If ``None``, falls back to ``.env``.
+    data_dir:
+        Override for the snapshot directory.  When ``cfg`` is a
+        :class:`Settings` and you want to share the same data dir as the
+        CLI, pass ``cfg.data_dir`` (from the underlying Config) here.
+    force_send:
+        If ``True``, ignore ``send_on_no_change`` and ``dry_run`` and
+        always attempt to send the email (used by the "Send now" UI
+        button).
+    skip_persist:
+        If ``True``, do not overwrite the previous snapshot. Useful for
+        the "Preview" button when you don't want to perturb tomorrow's
+        diff baseline.
+    """
+    if cfg is None:
+        cfg = load_config()
+
+    if data_dir is None:
+        data_dir = (
+            cfg.data_dir if isinstance(cfg, Config)
+            else load_config().data_dir
+        )
+
+    generated_at = _now(cfg.timezone)
     logger.info("Starting run @ %s (source=%s)", generated_at.isoformat(), cfg.source_url)
 
     try:
@@ -60,7 +97,7 @@ def run_once(cfg: Config | None = None) -> RunOutcome:
         scrape.total_displayed or "no total reported",
     )
 
-    previous = load_snapshot(cfg.data_dir)
+    previous = load_snapshot(data_dir)
     diff = diff_snapshots(previous, scrape.records)
     logger.info(
         "Diff vs previous: +%d / -%d (unchanged %d)",
@@ -75,13 +112,15 @@ def run_once(cfg: Config | None = None) -> RunOutcome:
 
     email_sent = False
     message = "ok"
+    dry_run = getattr(cfg, "dry_run", False)
+    send_on_no_change = getattr(cfg, "send_on_no_change", True)
 
-    should_send = cfg.send_on_no_change or diff.has_changes or not previous
-    if cfg.dry_run:
-        logger.info("DRY_RUN=true – email not sent. Subject: %s", subject)
+    should_send = force_send or send_on_no_change or diff.has_changes or not previous
+    if dry_run and not force_send:
+        logger.info("dry_run=true – email not sent. Subject: %s", subject)
         message = "dry-run, email skipped"
     elif not should_send:
-        logger.info("No changes and SEND_ON_NO_CHANGE=false – skipping email.")
+        logger.info("No changes and send_on_no_change=false – skipping email.")
         message = "no changes, email skipped"
     else:
         try:
@@ -96,13 +135,15 @@ def run_once(cfg: Config | None = None) -> RunOutcome:
             logger.error("Mailer failed: %s", exc)
             message = f"email failed: {exc}"
 
-    save_snapshot(cfg.data_dir, scrape.records)
+    if not skip_persist:
+        save_snapshot(data_dir, scrape.records)
 
     return RunOutcome(
-        success=email_sent or cfg.dry_run or not should_send,
+        success=email_sent or dry_run or not should_send,
         record_count=len(scrape.records),
         added=len(diff.added),
         removed=len(diff.removed),
         email_sent=email_sent,
         message=message,
+        subject=subject,
     )
