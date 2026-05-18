@@ -205,30 +205,103 @@ docker compose logs -f
 The container's entry point is `python main.py schedule`, so it stays
 alive and fires the job daily at the time configured in `.env`.
 
-### Local web dashboard
+### Local / self-hosted web dashboard
 
-Want to **see what the email looks like, scrape on demand, or send a test
-mail without waiting for 11 PM**? Run the bundled Flask dashboard:
+The same web UI that powers the Render deploy can run on your laptop or
+any server:
 
 ```bash
-python -m webapp.app
-# now open http://localhost:5000
+python -m webapp.app                 # dev server, http://localhost:5000
+# or for production / Render:
+gunicorn -w 1 -k gthread --threads 4 -b 0.0.0.0:$PORT webapp.app:app
 ```
 
-The dashboard provides:
+This single process serves the dashboard **and** runs the embedded
+scheduler (so it doubles as `python main.py schedule`).
 
-- 4 KPI cards (previous snapshot, live count, day-over-day diff, pages crawled).
-- **Run scrape now** / **Quick (3 pages)** buttons.
-- A sortable, filterable preview table of the current data.
-- A live **Email preview** (HTML + plain-text tabs) — exactly what gets sent.
-- **Send test email** — uses the SMTP settings from your `.env`, prefixes
-  the subject with `[TEST]`.
+What the dashboard gives you:
+
+- **KPI cards**: previous snapshot, live count, day-over-day diff, last
+  scheduled run outcome.
+- **▶ Send email now** — the big green "Start" button: scrapes
+  immediately, builds the email, and sends it to all configured
+  recipients in one click.
+- **Settings panel** — edit everything from the browser; saved to
+  `data/settings.json`, picked up by the scheduler without a restart:
+  - Daily time (24-hour clock) + timezone
+  - Schedule on/off toggle, dry-run toggle
+  - Source URL, region/state/type filters, max-pages cap
+  - SMTP host / port / STARTTLS / username / password
+  - From address and recipients (comma-separated, multiple)
+- **Live data preview** — sortable, filterable table of the current scrape.
+- **Email preview** — HTML body, plain-text body, and the newsletter
+  JSON payload (`/api/newsletter.json`) side by side.
+- **Send test email** — sends a `[TEST]`-prefixed copy using the saved
+  SMTP settings (handy to verify Gmail App Passwords before going live).
 - **Save as 'previous snapshot'** — manually commit the cached scrape so
-  the diff in the next run is meaningful for demos.
+  tomorrow's diff is meaningful for demos.
 
 See `samples/screenshots/dashboard-with-data.png` for a preview.
 
-### Option D – GitHub Actions (no server)
+#### Newsletter-style JSON output
+
+`GET /api/newsletter.json` returns a structured payload (schema
+`hexa.transmission-connectivity.v1`) — useful if you want to pipe the
+data into another newsletter service, Slack, or a static site. A
+pre-generated full-data example lives in `samples/newsletter.json`.
+
+```json
+{
+  "schema": "hexa.transmission-connectivity.v1",
+  "title": "Daily Transmission Connectivity Report",
+  "generated_at": "2026-05-19T01:15:15+05:30",
+  "subject": "Transmission Connectivity – 2026-05-19 | 565 records | +25/-0",
+  "source": {
+    "name": "CTUIL – Central Transmission Utility of India Limited",
+    "url": "https://www.ctuil.in/connectivity-effective-list",
+    "pages_scraped": 65
+  },
+  "summary": { "total_records": 565, "new_count": 25, "removed_count": 0, "unchanged_count": 540 },
+  "sections": [
+    { "id": "new",      "type": "table", "rows": [ ... ] },
+    { "id": "snapshot", "type": "table", "rows": [ ... ] }
+  ]
+}
+```
+
+### Option D – Render.com (one-click web service)
+
+[Render](https://render.com) hosts both the dashboard and the scheduler in
+**one** web service — same process, persistent disk, free TLS cert.
+
+1. Fork this repo (or push it to your own GitHub).
+2. On <https://dashboard.render.com> → **New +** → **Blueprint** → connect
+   the repo. Render reads [`render.yaml`](render.yaml) and provisions:
+
+   - a `web` service running `gunicorn -w 1 -k gthread webapp.app:app`
+   - a 1 GB persistent disk mounted at `/var/data` (holds
+     `settings.json` and `last_snapshot.json`)
+
+3. Once it's up, open the service URL and the dashboard appears.
+4. Click **Settings**, fill in SMTP host/port/username/password, the
+   sender, the recipients, and the daily run time. Hit **Save settings**.
+5. (Optional) Click **▶ Send email now** for an immediate first delivery.
+
+That's it — at 23:00 in your configured timezone every day, the embedded
+scheduler runs `scrape → diff → render → email → persist`.
+
+**Notes on plans / wake-up:**
+
+- **Starter ($7/mo)** keeps the container always-on, so the 11 PM trigger
+  fires reliably.
+- **Free plan** suspends the service after 15 min of inactivity. Either:
+  - Use a free uptime monitor (e.g. [cron-job.org](https://cron-job.org),
+    [UptimeRobot](https://uptimerobot.com)) to ping
+    `https://<your-service>.onrender.com/healthz` every 5 minutes, or
+  - Switch to **Option E** (GitHub Actions) which is fully serverless and
+    free — see below.
+
+### Option E – GitHub Actions (no server)
 
 Open the repo on GitHub and configure:
 
@@ -272,8 +345,10 @@ bullet-list layout for terminals and mail clients that don't render HTML.
 │   ├── scraper.py      # CTUIL HTML parser (BeautifulSoup + lxml)
 │   └── storage.py      # JSON snapshot + diffing
 ├── webapp/
-│   ├── app.py          # Flask server with /, /api/scrape, /api/email-preview, …
+│   ├── app.py          # Flask server (dashboard + embedded scheduler)
 │   └── templates/index.html
+├── render.yaml         # one-click Render Blueprint deploy
+├── Procfile            # gunicorn entry point for Render / Heroku-likes
 ├── samples/            # pre-rendered email + dashboard screenshots
 │   ├── email-preview.html / .txt / -subject.txt
 │   ├── snapshot.json   # full 565-record real-life scrape

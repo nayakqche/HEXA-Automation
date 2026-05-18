@@ -14,7 +14,12 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from hexa_agent.report import build_subject, render_html, render_text  # noqa: E402
+from hexa_agent.report import (  # noqa: E402
+    build_newsletter,
+    build_subject,
+    render_html,
+    render_text,
+)
 from hexa_agent.scraper import scrape_connectivity  # noqa: E402
 from hexa_agent.storage import diff_snapshots  # noqa: E402
 
@@ -42,6 +47,11 @@ def main() -> int:
     (out / "email-preview.html").write_text(html, encoding="utf-8")
     (out / "email-preview.txt").write_text(text, encoding="utf-8")
     (out / "email-subject.txt").write_text(subject, encoding="utf-8")
+    newsletter = build_newsletter(scrape=result, diff=diff, generated_at=now)
+    (out / "newsletter.json").write_text(
+        json.dumps(newsletter, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     (out / "snapshot.json").write_text(
         json.dumps(
             {
@@ -60,7 +70,13 @@ def main() -> int:
 
     print()
     print("Wrote:")
-    for fname in ["email-preview.html", "email-preview.txt", "email-subject.txt", "snapshot.json"]:
+    for fname in [
+        "email-preview.html",
+        "email-preview.txt",
+        "email-subject.txt",
+        "newsletter.json",
+        "snapshot.json",
+    ]:
         p = out / fname
         print(f"  {p.relative_to(ROOT)}  ({p.stat().st_size:,} bytes)")
     print()
