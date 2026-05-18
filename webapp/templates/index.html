@@ -385,6 +385,24 @@
     </div>
   </section>
 
+  <!-- ==================== HISTORY ==================== -->
+  <section class="section">
+    <h2>Browse past snapshots</h2>
+    <p class="desc">
+      Every daily run is saved to <code>data/snapshots/&lt;date&gt;.json</code>.
+      Pick a date to load that day's snapshot into the live data table below.
+      (CTUIL doesn't publish historical data, so this is built up over time —
+      the first entry appears after your first daily run / 'Save as previous snapshot'.)
+    </p>
+    <div class="row">
+      <select id="snapshot-date" style="max-width: 260px">
+        <option value="">— pick a date —</option>
+      </select>
+      <button id="btn-load-snapshot" class="ghost">Load snapshot</button>
+      <span class="muted" id="history-status"></span>
+    </div>
+  </section>
+
   <!-- ==================== LIVE DATA ==================== -->
   <section class="section">
     <h2>Live data preview</h2>
@@ -762,8 +780,48 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  $("#btn-load-snapshot").onclick = async () => {
+    const date = $("#snapshot-date").value;
+    if (!date) return toast("Pick a date first.", false);
+    setBusy(true, "Loading snapshot from " + date + "…");
+    try {
+      const r = await fetch("/api/snapshot/" + encodeURIComponent(date));
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || "not found");
+      cachedRecords = data.records;
+      $("#stat-live").textContent = data.count;
+      $("#stat-live-hint").textContent = "snapshot from " + date;
+      renderTable();
+      $("#history-status").textContent = "Loaded " + data.count + " records from " + date;
+      setBusy(false, "Snapshot loaded.");
+    } catch (e) {
+      toast("Load failed: " + e.message, false);
+      setBusy(false, "Error: " + e.message);
+    }
+  };
+
+  async function loadHistory() {
+    try {
+      const r = await fetch("/api/snapshots");
+      const data = await r.json();
+      const select = $("#snapshot-date");
+      select.innerHTML = '<option value="">— pick a date —</option>';
+      for (const snap of (data.snapshots || [])) {
+        const opt = document.createElement("option");
+        opt.value = snap.date;
+        opt.textContent = snap.date + "  (" + snap.count + " records)";
+        select.appendChild(opt);
+      }
+      if (!(data.snapshots || []).length) {
+        $("#history-status").textContent =
+          "No saved snapshots yet — they accumulate after each daily run.";
+      }
+    } catch { /* non-fatal */ }
+  }
+
   loadStatus();
   loadSettings();
+  loadHistory();
 
   // Auto-trigger a scrape if ?auto=quick|full appears in the URL.
   const auto = new URLSearchParams(location.search).get("auto");

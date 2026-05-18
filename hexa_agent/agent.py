@@ -8,8 +8,8 @@ from typing import Union
 from zoneinfo import ZoneInfo
 
 from .config import Config, load_config
-from .mailer import MailerError, send_email
-from .report import build_subject, render_html, render_text
+from .mailer import Attachment, MailerError, send_email
+from .report import build_csv, build_subject, render_html, render_text
 from .scraper import ScraperError, scrape_connectivity
 from .settings import Settings
 from .storage import diff_snapshots, load_snapshot, save_snapshot
@@ -106,9 +106,18 @@ def run_once(
         diff.unchanged_count,
     )
 
+    csv_filename = f"connectivity-{generated_at.strftime('%Y-%m-%d')}.csv"
     subject = build_subject(scrape, diff, generated_at)
-    html_body = render_html(scrape=scrape, diff=diff, generated_at=generated_at)
+    html_body = render_html(
+        scrape=scrape, diff=diff, generated_at=generated_at,
+        csv_filename=csv_filename,
+    )
     text_body = render_text(scrape=scrape, diff=diff, generated_at=generated_at)
+    attachments = [Attachment(
+        filename=csv_filename,
+        content=build_csv(scrape.records),
+        mime_type="text/csv",
+    )]
 
     email_sent = False
     message = "ok"
@@ -129,6 +138,7 @@ def run_once(
                 subject=subject,
                 text_body=text_body,
                 html_body=html_body,
+                attachments=attachments,
             )
             email_sent = True
         except MailerError as exc:
@@ -136,7 +146,7 @@ def run_once(
             message = f"email failed: {exc}"
 
     if not skip_persist:
-        save_snapshot(data_dir, scrape.records)
+        save_snapshot(data_dir, scrape.records, when=generated_at)
 
     return RunOutcome(
         success=email_sent or dry_run or not should_send,

@@ -36,7 +36,13 @@ from hexa_agent.report import (
 from hexa_agent.scheduler import ManagedScheduler
 from hexa_agent.scraper import ScrapeResult, ScraperError, scrape_connectivity
 from hexa_agent.settings import Settings, SettingsStore
-from hexa_agent.storage import diff_snapshots, load_snapshot, save_snapshot
+from hexa_agent.storage import (
+    diff_snapshots,
+    list_history,
+    load_history_snapshot,
+    load_snapshot,
+    save_snapshot,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -268,8 +274,24 @@ def _create_app() -> Flask:
             cached = _cache.result
         if cached is None:
             return jsonify({"ok": False, "error": "no cached scrape yet"}), 400
-        path = save_snapshot(cfg.data_dir, cached.records)
+        path = save_snapshot(cfg.data_dir, cached.records, when=_tz_now())
         return jsonify({"ok": True, "path": str(path), "count": len(cached.records)})
+
+    @app.route("/api/snapshots")
+    def api_snapshots_list():
+        return jsonify({"snapshots": list_history(cfg.data_dir)})
+
+    @app.route("/api/snapshot/<date>")
+    def api_snapshot_get(date: str):
+        records = load_history_snapshot(cfg.data_dir, date)
+        if records is None:
+            return jsonify({"ok": False, "error": "snapshot not found"}), 404
+        return jsonify({
+            "ok": True,
+            "date": date,
+            "count": len(records),
+            "records": [r.to_dict() for r in records],
+        })
 
     @app.route("/healthz")
     def healthz():

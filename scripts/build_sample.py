@@ -15,12 +15,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from hexa_agent.report import (  # noqa: E402
+    build_csv,
     build_newsletter,
     build_subject,
     render_html,
     render_text,
 )
-from hexa_agent.scraper import scrape_connectivity  # noqa: E402
+from hexa_agent.scraper import ConnectivityRecord, scrape_connectivity  # noqa: E402
 from hexa_agent.storage import diff_snapshots  # noqa: E402
 
 
@@ -34,19 +35,48 @@ def main() -> int:
     print(f"  Records: {len(result.records)}")
     print(f"  Page note: {result.total_displayed}")
 
-    # Pretend the previous run only had the first 25 rows, so the report
-    # shows a non-empty "new entries" section in the demo.
-    fake_previous = result.records[25:]
-    diff = diff_snapshots(fake_previous, result.records)
+    # Simulate yesterday's snapshot so the demo email has interesting
+    # numbers in every section:
+    #   - drop the first 5 records  -> they appear as "New" today
+    #   - tweak a couple of fields  -> they appear as "Updated" today
+    #   - add an extra phantom record -> it appears as "Removed" today
+    today = result.records
+    yesterday: list[ConnectivityRecord] = []
+    for i, r in enumerate(today):
+        if i < 5:
+            continue
+        if i in (10, 25):
+            yesterday.append(ConnectivityRecord(**{
+                **r.to_dict(),
+                "installed_capacity_mw": "100",  # was something else
+                "expected_date": "31-12-2030",   # was something else
+            }))
+        else:
+            yesterday.append(r)
+    yesterday.append(ConnectivityRecord(
+        expected_date="01-04-2030", region="NR", state="Rajasthan",
+        substation="Removed-Sub", application_id="9999999999",
+        applicant="A Withdrawn Applicant Pvt Ltd",
+        generation_type="Solar", installed_capacity_mw="100", deemed_gna_mw="100",
+    ))
 
+    diff = diff_snapshots(yesterday, today)
+
+    csv_filename = "connectivity-{}.csv".format(
+        datetime.now().strftime("%Y-%m-%d")
+    )
     now = datetime.now(ZoneInfo("Asia/Kolkata"))
-    html = render_html(scrape=result, diff=diff, generated_at=now)
+    html = render_html(
+        scrape=result, diff=diff, generated_at=now, csv_filename=csv_filename,
+    )
     text = render_text(scrape=result, diff=diff, generated_at=now)
     subject = build_subject(result, diff, now)
+    csv_bytes = build_csv(result.records)
 
     (out / "email-preview.html").write_text(html, encoding="utf-8")
     (out / "email-preview.txt").write_text(text, encoding="utf-8")
     (out / "email-subject.txt").write_text(subject, encoding="utf-8")
+    (out / csv_filename).write_bytes(csv_bytes)
     newsletter = build_newsletter(scrape=result, diff=diff, generated_at=now)
     (out / "newsletter.json").write_text(
         json.dumps(newsletter, indent=2, ensure_ascii=False),
@@ -76,6 +106,7 @@ def main() -> int:
         "email-subject.txt",
         "newsletter.json",
         "snapshot.json",
+        csv_filename,
     ]:
         p = out / fname
         print(f"  {p.relative_to(ROOT)}  ({p.stat().st_size:,} bytes)")

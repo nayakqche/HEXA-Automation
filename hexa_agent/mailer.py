@@ -2,10 +2,32 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import smtplib
 import ssl
+from dataclasses import dataclass
 from email.message import EmailMessage
 from typing import Protocol, Sequence
+
+
+@dataclass(frozen=True)
+class Attachment:
+    """A single file to attach to the outgoing email."""
+    filename: str
+    content: bytes
+    mime_type: str = ""
+
+    @property
+    def maintype(self) -> str:
+        return (self.mime_type or self._guessed()).split("/", 1)[0]
+
+    @property
+    def subtype(self) -> str:
+        return (self.mime_type or self._guessed()).split("/", 1)[-1]
+
+    def _guessed(self) -> str:
+        guess, _ = mimetypes.guess_type(self.filename)
+        return guess or "application/octet-stream"
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +69,7 @@ def send_email(
     text_body: str,
     html_body: str,
     recipients: Sequence[str] | None = None,
+    attachments: Sequence[Attachment] | None = None,
 ) -> None:
     """Send a multipart email using the SMTP settings in ``cfg``.
 
@@ -73,6 +96,14 @@ def send_email(
     msg["Bcc"] = ", ".join(to_list)
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
+
+    for att in attachments or ():
+        msg.add_attachment(
+            att.content,
+            maintype=att.maintype,
+            subtype=att.subtype,
+            filename=att.filename,
+        )
 
     logger.info(
         "Sending email via %s:%d to %s (subject=%r)",
