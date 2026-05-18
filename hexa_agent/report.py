@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Iterable, Sequence
 
 from jinja2 import Environment, select_autoescape
+from markupsafe import Markup
 
 from .scraper import ConnectivityRecord, ScrapeResult
 from .storage import Diff
@@ -103,8 +104,8 @@ _TABLE_MACRO = _env.from_string(
 )
 
 
-def _render_table(rows: Sequence[ConnectivityRecord], css: str) -> str:
-    return _TABLE_MACRO.render(rows=rows, css=css)
+def _render_table(rows: Sequence[ConnectivityRecord], css: str) -> Markup:
+    return Markup(_TABLE_MACRO.render(rows=rows, css=css))
 
 
 def render_html(
