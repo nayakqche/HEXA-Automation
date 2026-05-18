@@ -1,11 +1,13 @@
 """Pull ALL CTUIL records and write the rendered email HTML + a JSON dump
 to ./samples/ so they can be opened directly in any browser.
 
-Run from repo root:  python scripts/build_sample.py
+Run from repo root:                 python scripts/build_sample.py
+For the 'no changes today' demo:    DEMO_QUIET_DAY=1 python scripts/build_sample.py
 """
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -36,29 +38,31 @@ def main() -> int:
     print(f"  Page note: {result.total_displayed}")
 
     # Simulate yesterday's snapshot so the demo email has interesting
-    # numbers in every section:
-    #   - drop the first 5 records  -> they appear as "New" today
-    #   - tweak a couple of fields  -> they appear as "Updated" today
-    #   - add an extra phantom record -> it appears as "Removed" today
+    # numbers in every section. (Set DEMO_QUIET_DAY=1 to instead show
+    # the 'no diff' email body — the grouped 'Today's snapshot by type'
+    # preview that appears when nothing changed.)
     today = result.records
-    yesterday: list[ConnectivityRecord] = []
-    for i, r in enumerate(today):
-        if i < 5:
-            continue
-        if i in (10, 25):
-            yesterday.append(ConnectivityRecord(**{
-                **r.to_dict(),
-                "installed_capacity_mw": "100",  # was something else
-                "expected_date": "31-12-2030",   # was something else
-            }))
-        else:
-            yesterday.append(r)
-    yesterday.append(ConnectivityRecord(
-        expected_date="01-04-2030", region="NR", state="Rajasthan",
-        substation="Removed-Sub", application_id="9999999999",
-        applicant="A Withdrawn Applicant Pvt Ltd",
-        generation_type="Solar", installed_capacity_mw="100", deemed_gna_mw="100",
-    ))
+    if os.getenv("DEMO_QUIET_DAY"):
+        yesterday: list[ConnectivityRecord] = list(today)
+    else:
+        yesterday = []
+        for i, r in enumerate(today):
+            if i < 5:
+                continue
+            if i in (10, 25):
+                yesterday.append(ConnectivityRecord(**{
+                    **r.to_dict(),
+                    "installed_capacity_mw": "100",
+                    "expected_date": "31-12-2030",
+                }))
+            else:
+                yesterday.append(r)
+        yesterday.append(ConnectivityRecord(
+            expected_date="01-04-2030", region="NR", state="Rajasthan",
+            substation="Removed-Sub", application_id="9999999999",
+            applicant="A Withdrawn Applicant Pvt Ltd",
+            generation_type="Solar", installed_capacity_mw="100", deemed_gna_mw="100",
+        ))
 
     diff = diff_snapshots(yesterday, today)
 

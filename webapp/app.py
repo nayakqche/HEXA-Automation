@@ -186,20 +186,27 @@ def _create_app() -> Flask:
             }
         )
 
+    def _force_param() -> bool:
+        return request.args.get("force", "").lower() in ("1", "true", "yes")
+
     @app.route("/api/email-preview")
     def api_email_preview():
         try:
-            scrape = _scrape_cached()
+            scrape = _scrape_cached(force=_force_param())
         except ScraperError as exc:
             return f"<pre>Scrape failed: {exc}</pre>", 502
         previous = load_snapshot(cfg.data_dir)
         diff = diff_snapshots(previous, scrape.records)
-        return render_html(scrape=scrape, diff=diff, generated_at=_tz_now())
+        now = _tz_now()
+        return render_html(
+            scrape=scrape, diff=diff, generated_at=now,
+            csv_filename=f"connectivity-{now.strftime('%Y-%m-%d')}.csv",
+        )
 
     @app.route("/api/email-preview/text")
     def api_email_preview_text():
         try:
-            scrape = _scrape_cached()
+            scrape = _scrape_cached(force=_force_param())
         except ScraperError as exc:
             return f"Scrape failed: {exc}", 502
         previous = load_snapshot(cfg.data_dir)
@@ -214,7 +221,7 @@ def _create_app() -> Flask:
     @app.route("/api/newsletter.json")
     def api_newsletter_json():
         try:
-            scrape = _scrape_cached()
+            scrape = _scrape_cached(force=_force_param())
         except ScraperError as exc:
             return jsonify({"ok": False, "error": str(exc)}), 502
         previous = load_snapshot(cfg.data_dir)

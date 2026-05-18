@@ -187,6 +187,36 @@ def test_build_newsletter_empty_when_no_diff():
     assert payload["summary"]["unchanged_count"] == 2
 
 
+def test_quiet_day_html_includes_grouped_preview_not_just_no_changes():
+    """When the diff is empty, the email body must still show real data
+    grouped by type (so the recipient doesn't get a blank email)."""
+    records = [
+        _rec("A1", gen_type="Solar"),
+        _rec("A2", gen_type="Solar"),
+        _rec("A3", gen_type="Solar"),
+        _rec("A4", gen_type="Solar"),
+        _rec("A5", gen_type="Wind"),
+        _rec("A6", gen_type="Wind"),
+    ]
+    scrape = ScrapeResult(source_url="https://x.test", records=records)
+    diff = diff_snapshots(records, records)  # identical -> no diff
+    now = datetime(2026, 5, 18, 23, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+
+    html = render_html(
+        scrape=scrape, diff=diff, generated_at=now,
+        csv_filename="connectivity-2026-05-18.csv",
+    )
+    assert "No changes since yesterday" in html
+    assert "Today's snapshot by type" in html
+    assert "Solar" in html and "Wind" in html
+    # The preview caps at 3 rows per type -> at least 3 Solar rows + 2 Wind rows visible.
+    assert html.count("<tr") >= 5
+
+    text = render_text(scrape=scrape, diff=diff, generated_at=now)
+    assert "Today's snapshot by type" in text
+    assert "Solar (4 total" in text or "Solar (4 total)" in text or "Solar (4 total," in text
+
+
 def test_build_csv_includes_header_and_all_rows():
     records = [_rec("A1"), _rec("A2", substation="Sanchore")]
     csv_bytes = build_csv(records)

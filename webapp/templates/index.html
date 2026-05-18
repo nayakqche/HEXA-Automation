@@ -696,17 +696,43 @@ function renderTable() {
     (filter ? " (filtered)" : "");
 }
 
-async function refreshPreview() {
-  $("#preview-html").src = "/api/email-preview?ts=" + Date.now();
-  fetch("/api/email-preview/text").then(r => r.text()).then(t => $("#preview-text").textContent = t);
-  fetch("/api/newsletter.json").then(r => r.json())
-    .then(j => $("#preview-json").textContent = JSON.stringify(j, null, 2));
+async function refreshPreview(force = false) {
+  const q = "ts=" + Date.now() + (force ? "&force=1" : "");
+  if (force) $("#status-text").textContent = "Re-scraping CTUIL for fresh preview…";
+  $("#preview-html").src = "/api/email-preview?" + q;
+  await Promise.all([
+    fetch("/api/email-preview/text?" + q)
+      .then(r => r.text())
+      .then(t => $("#preview-text").textContent = t),
+    fetch("/api/newsletter.json?" + q)
+      .then(r => r.json())
+      .then(j => $("#preview-json").textContent = JSON.stringify(j, null, 2)),
+  ]);
+  if (force) $("#status-text").textContent = "Preview refreshed.";
+}
+
+async function loadHistory() {
+  try {
+    const r = await fetch("/api/snapshots?ts=" + Date.now());
+    const data = await r.json();
+    const select = $("#snapshot-date");
+    select.innerHTML = '<option value="">— pick a date —</option>';
+    for (const snap of (data.snapshots || [])) {
+      const opt = document.createElement("option");
+      opt.value = snap.date;
+      opt.textContent = snap.date + "  (" + snap.count + " records)";
+      select.appendChild(opt);
+    }
+    $("#history-status").textContent = (data.snapshots || []).length
+      ? "Loaded " + data.snapshots.length + " saved snapshot(s)."
+      : "No saved snapshots yet — they accumulate after each daily run.";
+  } catch { /* non-fatal */ }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   $("#btn-scrape").onclick = () => scrape(true);
   $("#btn-scrape-quick").onclick = () => scrape(true, 3);
-  $("#btn-preview").onclick = () => refreshPreview();
+  $("#btn-preview").onclick = () => refreshPreview(true);
   $("#btn-save").onclick = saveSettings;
   $("#btn-onboard-save").onclick = onboardingSave;
   $("#btn-onboard-test").onclick = onboardingTest;
@@ -720,6 +746,7 @@ document.addEventListener("DOMContentLoaded", () => {
       toast("Saved " + data.count + " records as the new previous snapshot.");
       await refreshDiff();
       await refreshPreview();
+      await loadHistory();
     } else {
       toast(data.error || "Failed to save", false);
     }
@@ -737,6 +764,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setBusy(false, "Sent.");
       await loadStatus();
       await refreshPreview();
+      await loadHistory();
     } catch (e) {
       toast("Send failed: " + e.message, false);
       setBusy(false, "Error: " + e.message);
@@ -799,25 +827,6 @@ document.addEventListener("DOMContentLoaded", () => {
       setBusy(false, "Error: " + e.message);
     }
   };
-
-  async function loadHistory() {
-    try {
-      const r = await fetch("/api/snapshots");
-      const data = await r.json();
-      const select = $("#snapshot-date");
-      select.innerHTML = '<option value="">— pick a date —</option>';
-      for (const snap of (data.snapshots || [])) {
-        const opt = document.createElement("option");
-        opt.value = snap.date;
-        opt.textContent = snap.date + "  (" + snap.count + " records)";
-        select.appendChild(opt);
-      }
-      if (!(data.snapshots || []).length) {
-        $("#history-status").textContent =
-          "No saved snapshots yet — they accumulate after each daily run.";
-      }
-    } catch { /* non-fatal */ }
-  }
 
   loadStatus();
   loadSettings();

@@ -53,6 +53,22 @@ def _group_updates_by_type(
     )
 
 
+def _preview_by_type(
+    records: Sequence[ConnectivityRecord],
+    rows_per_type: int = 3,
+) -> "OrderedDict[str, dict]":
+    """Pick the first ``rows_per_type`` records per generation type.
+
+    Used to fill the email body on quiet days (zero diff) so the recipient
+    always sees real data instead of just a "no changes" line.
+    """
+    full = _group_by_type(records)
+    return OrderedDict(
+        (t, {"total": len(rows), "sample": rows[:rows_per_type]})
+        for t, rows in full.items()
+    )
+
+
 # Human-readable labels for fields shown in the "Updated" before/after row.
 _FIELD_LABELS = {
     "expected_date": "Expected date",
@@ -189,10 +205,17 @@ _HTML_TEMPLATE = _env.from_string(
 {% endif %}
 
 {% if not diff.added and not diff.removed and not diff.updated %}
-<p style="margin: 14px 0 0; color: #475569; font-size: 14px;">
+<p style="margin: 14px 0 8px; color: #475569; font-size: 14px;">
   <b>No changes since yesterday.</b>
   {{ records|length }} records are currently pending on
-  <a href="{{ source_url }}">{{ source_url }}</a>.
+  <a href="{{ source_url }}">{{ source_url }}</a>. Today's snapshot by type:
+</p>
+{% for type_name, rows in preview_groups.items() %}
+  <h3 class="group">{{ type_name }} <span class="count">&middot; {{ rows.total }} total &middot; showing first {{ rows.sample|length }}</span></h3>
+  {{ table(rows.sample, "") }}
+{% endfor %}
+<p style="margin: 12px 0 0; font-size: 12px; color: #6b7280;">
+  Full {{ records|length }}-record snapshot in the attached CSV.
 </p>
 {% endif %}
 
@@ -308,6 +331,7 @@ def render_html(
         removed_groups=_group_by_type(diff.removed),
         updated_groups=_group_updates_by_type(diff.updated),
         total_groups=_group_counts(scrape.records),
+        preview_groups=_preview_by_type(scrape.records),
         csv_filename=csv_filename,
         table=_render_table,
         updates_table=_render_updates_table,
@@ -376,7 +400,22 @@ def render_text(
     if not diff.added and not diff.removed and not diff.updated:
         lines.append(
             f"No changes since yesterday. {len(scrape.records)} records "
-            f"still pending on {scrape.source_url}."
+            f"still pending on {scrape.source_url}. Today's snapshot by type:"
+        )
+        for type_name, info in _preview_by_type(scrape.records).items():
+            lines.append(
+                f"\n  -- {type_name} ({info['total']} total, showing first "
+                f"{len(info['sample'])}) --"
+            )
+            for r in info["sample"]:
+                lines.append(
+                    f"  - [{r.expected_date}] {r.region}/{r.state} "
+                    f"{r.substation} | {r.applicant} "
+                    f"| {r.installed_capacity_mw} MW | App {r.application_id}"
+                )
+        lines.append("")
+        lines.append(
+            f"Full {len(scrape.records)}-record snapshot in the attached CSV."
         )
         lines.append("")
 
