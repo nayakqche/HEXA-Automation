@@ -1,0 +1,66 @@
+# Render Blueprint for the HEXA Transmission Connectivity Agent.
+#
+# Click "New +" → "Blueprint" on https://dashboard.render.com, point it
+# at this repo, and Render will provision the web service below. The
+# service serves the Flask dashboard AND runs the embedded daily
+# scheduler in the same process.
+#
+# Notes:
+#  - We use a single gunicorn worker (`-w 1`) so the APScheduler
+#    background thread only runs in one process.
+#  - The `disk:` block gives the service persistent storage for
+#    settings.json and last_snapshot.json. This requires the Starter
+#    plan or higher (free tier has ephemeral disk).
+#  - The Free plan suspends the service after 15 min of inactivity, so
+#    the 11 PM trigger may not fire. Either use the Starter plan, or
+#    point a free uptime monitor (e.g. cron-job.org) at the
+#    /healthz endpoint every 5 minutes to keep the service awake.
+
+services:
+  - type: web
+    name: hexa-connectivity-agent
+    runtime: python
+    plan: starter            # or: free  (with the keep-alive caveat above)
+    region: singapore        # closest Render region to India; change as needed
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /healthz
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn -w 1 -k gthread --threads 4 --timeout 120 -b 0.0.0.0:$PORT webapp.app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.5
+      - key: DATA_DIR
+        value: /var/data
+      - key: TIMEZONE
+        value: Asia/Kolkata
+      - key: SOURCE_URL
+        value: https://www.ctuil.in/connectivity-effective-list
+      - key: HEXA_ENABLE_SCHEDULER
+        value: "true"
+      # Initial defaults – everything below can also be edited later
+      # via the in-app Settings panel and will be saved to the disk.
+      - key: RUN_HOUR
+        value: "23"
+      - key: RUN_MINUTE
+        value: "0"
+      # The following are secrets you fill in via the Render dashboard
+      # AFTER the first deploy:
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USE_TLS
+        value: "true"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_TO
+        sync: false
+    disk:
+      name: hexa-data
+      mountPath: /var/data
+      sizeGB: 1
