@@ -1,7 +1,7 @@
 {
   "schema": "hexa.transmission-connectivity.v1",
   "title": "Daily Transmission Connectivity Report",
-  "generated_at": "2026-05-19T01:15:15.263145+05:30",
+  "generated_at": "2026-05-19T03:28:28.290698+05:30",
   "subject": "Transmission Connectivity – 2026-05-19 | 565 records | +25/-0",
   "source": {
     "name": "CTUIL – Central Transmission Utility of India Limited",
@@ -60,15 +60,59 @@
       ],
       "rows": [
         {
+          "expected_date": "30-06-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Jalore",
+          "application_id": "2200000850",
+          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "300",
+          "deemed_gna_mw": "300"
+        },
+        {
           "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Ramgarh",
-          "application_id": "2200000672",
-          "applicant": "Tata Power Renewable Energy Limited",
+          "substation": "Bikaner-V",
+          "application_id": "2200000866",
+          "applicant": "SOLARCRAFT POWER INDIA 8 PRIVATE LIMITED",
           "generation_type": "Solar",
-          "installed_capacity_mw": "600",
-          "deemed_gna_mw": "600"
+          "installed_capacity_mw": "300",
+          "deemed_gna_mw": "300"
+        },
+        {
+          "expected_date": "31-03-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Bikaner-V",
+          "application_id": "2200000796",
+          "applicant": "VENA ENERGY VINDHYA WIND POWER PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "300",
+          "deemed_gna_mw": "300"
+        },
+        {
+          "expected_date": "31-03-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Bikaner-V",
+          "application_id": "2200000726",
+          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "1000",
+          "deemed_gna_mw": "1000"
+        },
+        {
+          "expected_date": "31-03-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Bhadla-IV",
+          "application_id": "2200000605",
+          "applicant": "ARAVALLI SURYA (PROJECT 1) PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "335",
+          "deemed_gna_mw": "335"
         },
         {
           "expected_date": "31-03-2030",
@@ -86,52 +130,8 @@
           "region": "NR",
           "state": "Rajasthan",
           "substation": "Bhadla-IV",
-          "application_id": "2200000811",
-          "applicant": "ADANI RENEWABLE ENERGY HOLDING FOUR LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "765",
-          "deemed_gna_mw": "765"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000886",
+          "application_id": "2200000516",
           "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000761",
-          "applicant": "KANTIDA RENEWABLES INDIA PROJECT PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Ramgarh-II",
-          "application_id": "2200000797",
-          "applicant": "JSW NEO ENERGY LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "700",
-          "deemed_gna_mw": "700"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Sanchore",
-          "application_id": "2200000946",
-          "applicant": "HR SARASWATI ENERGY PRIVATE LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "300",
           "deemed_gna_mw": "300"
@@ -148,26 +148,15 @@
           "deemed_gna_mw": "200"
         },
         {
-          "expected_date": "31-03-2030",
+          "expected_date": "30-06-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000521",
+          "substation": "Jalore",
+          "application_id": "2200000889",
           "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
           "generation_type": "Solar",
-          "installed_capacity_mw": "200",
-          "deemed_gna_mw": "200"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000866",
-          "applicant": "SOLARCRAFT POWER INDIA 8 PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
+          "installed_capacity_mw": "100",
+          "deemed_gna_mw": "100"
         },
         {
           "expected_date": "30-06-2030",
@@ -195,56 +184,45 @@
           "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
+          "substation": "Ramgarh",
+          "application_id": "2200000672",
+          "applicant": "Tata Power Renewable Energy Limited",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "600",
+          "deemed_gna_mw": "600"
+        },
+        {
+          "expected_date": "31-03-2030",
+          "region": "NR",
+          "state": "Rajasthan",
           "substation": "Ramgarh-II",
-          "application_id": "2200000777",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
+          "application_id": "2200000797",
+          "applicant": "JSW NEO ENERGY LIMITED",
           "generation_type": "Solar",
-          "installed_capacity_mw": "400",
-          "deemed_gna_mw": "400"
+          "installed_capacity_mw": "700",
+          "deemed_gna_mw": "700"
         },
         {
-          "expected_date": "31-03-2030",
+          "expected_date": "31-10-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000516",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000605",
-          "applicant": "ARAVALLI SURYA (PROJECT 1) PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "335",
-          "deemed_gna_mw": "335"
-        },
-        {
-          "expected_date": "01-04-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000910",
-          "applicant": "VISMAYA FOUR RENEWABLES PRIVATE LIMITED",
+          "substation": "Barmer-III",
+          "application_id": "2200000954",
+          "applicant": "VISMAYA FIVE RENEWABLES PRIVATE LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "250",
           "deemed_gna_mw": "250"
         },
         {
-          "expected_date": "30-06-2030",
+          "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Barmer-III",
-          "application_id": "2200000973",
-          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
+          "substation": "Bhadla-IV",
+          "application_id": "2200000521",
+          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
           "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
+          "installed_capacity_mw": "200",
+          "deemed_gna_mw": "200"
         },
         {
           "expected_date": "31-03-2030",
@@ -258,12 +236,34 @@
           "deemed_gna_mw": "300"
         },
         {
+          "expected_date": "30-06-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Jalore",
+          "application_id": "2200000886",
+          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "100",
+          "deemed_gna_mw": "100"
+        },
+        {
           "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000755",
-          "applicant": "SA RENEWABLE INFRA PRIVATE LIMITED",
+          "substation": "Bhadla-IV",
+          "application_id": "2200000761",
+          "applicant": "KANTIDA RENEWABLES INDIA PROJECT PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "300",
+          "deemed_gna_mw": "300"
+        },
+        {
+          "expected_date": "30-06-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Barmer-III",
+          "application_id": "2200000973",
+          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "100",
           "deemed_gna_mw": "100"
@@ -283,380 +283,59 @@
           "expected_date": "30-06-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000850",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
+          "substation": "Sanchore",
+          "application_id": "2200000946",
+          "applicant": "HR SARASWATI ENERGY PRIVATE LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "300",
           "deemed_gna_mw": "300"
         },
         {
-          "expected_date": "31-10-2030",
+          "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Barmer-III",
-          "application_id": "2200000954",
-          "applicant": "VISMAYA FIVE RENEWABLES PRIVATE LIMITED",
+          "substation": "Bhadla-IV",
+          "application_id": "2200000811",
+          "applicant": "ADANI RENEWABLE ENERGY HOLDING FOUR LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "765",
+          "deemed_gna_mw": "765"
+        },
+        {
+          "expected_date": "01-04-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Bhadla-IV",
+          "application_id": "2200000910",
+          "applicant": "VISMAYA FOUR RENEWABLES PRIVATE LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "250",
           "deemed_gna_mw": "250"
         },
         {
-          "expected_date": "30-06-2030",
+          "expected_date": "31-03-2030",
           "region": "NR",
           "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000889",
+          "substation": "Ramgarh-II",
+          "application_id": "2200000777",
           "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
+          "generation_type": "Solar",
+          "installed_capacity_mw": "400",
+          "deemed_gna_mw": "400"
+        },
+        {
+          "expected_date": "31-03-2030",
+          "region": "NR",
+          "state": "Rajasthan",
+          "substation": "Bikaner-V",
+          "application_id": "2200000755",
+          "applicant": "SA RENEWABLE INFRA PRIVATE LIMITED",
           "generation_type": "Solar",
           "installed_capacity_mw": "100",
           "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000726",
-          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "1000",
-          "deemed_gna_mw": "1000"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000796",
-          "applicant": "VENA ENERGY VINDHYA WIND POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
         }
       ],
       "highlight": "added"
-    },
-    {
-      "id": "snapshot",
-      "title": "Current snapshot — first 25 of 565",
-      "type": "table",
-      "columns": [
-        {
-          "key": "expected_date",
-          "label": "Expected date"
-        },
-        {
-          "key": "region",
-          "label": "Region"
-        },
-        {
-          "key": "state",
-          "label": "State"
-        },
-        {
-          "key": "substation",
-          "label": "Substation"
-        },
-        {
-          "key": "application_id",
-          "label": "Application ID"
-        },
-        {
-          "key": "applicant",
-          "label": "Applicant"
-        },
-        {
-          "key": "generation_type",
-          "label": "Type"
-        },
-        {
-          "key": "installed_capacity_mw",
-          "label": "Installed (MW)"
-        },
-        {
-          "key": "deemed_gna_mw",
-          "label": "Deemed GNA (MW)"
-        }
-      ],
-      "rows": [
-        {
-          "expected_date": "31-10-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Barmer-III",
-          "application_id": "2200000954",
-          "applicant": "VISMAYA FIVE RENEWABLES PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "250",
-          "deemed_gna_mw": "250"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Sanchore",
-          "application_id": "2200000946",
-          "applicant": "HR SARASWATI ENERGY PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Barmer-III",
-          "application_id": "2200000973",
-          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000886",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000890",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000850",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000889",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200001006",
-          "applicant": "Sprng Vaayu Urja Private Limited",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "600",
-          "deemed_gna_mw": "600"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000888",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "200",
-          "deemed_gna_mw": "200"
-        },
-        {
-          "expected_date": "30-06-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Jalore",
-          "application_id": "2200000887",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "200",
-          "deemed_gna_mw": "200"
-        },
-        {
-          "expected_date": "01-04-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000910",
-          "applicant": "VISMAYA FOUR RENEWABLES PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "250",
-          "deemed_gna_mw": "250"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000516",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000605",
-          "applicant": "ARAVALLI SURYA (PROJECT 1) PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "335",
-          "deemed_gna_mw": "335"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000522",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000521",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "200",
-          "deemed_gna_mw": "200"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000875",
-          "applicant": "DEMETER SUN POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000755",
-          "applicant": "SA RENEWABLE INFRA PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "100",
-          "deemed_gna_mw": "100"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000796",
-          "applicant": "VENA ENERGY VINDHYA WIND POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000866",
-          "applicant": "SOLARCRAFT POWER INDIA 8 PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000811",
-          "applicant": "ADANI RENEWABLE ENERGY HOLDING FOUR LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "765",
-          "deemed_gna_mw": "765"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Ramgarh-II",
-          "application_id": "2200000797",
-          "applicant": "JSW NEO ENERGY LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "700",
-          "deemed_gna_mw": "700"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bikaner-V",
-          "application_id": "2200000726",
-          "applicant": "NTPC RENEWABLE ENERGY LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "1000",
-          "deemed_gna_mw": "1000"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Ramgarh-II",
-          "application_id": "2200000777",
-          "applicant": "RENEW SOLAR POWER PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "400",
-          "deemed_gna_mw": "400"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Bhadla-IV",
-          "application_id": "2200000761",
-          "applicant": "KANTIDA RENEWABLES INDIA PROJECT PRIVATE LIMITED",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "300",
-          "deemed_gna_mw": "300"
-        },
-        {
-          "expected_date": "31-03-2030",
-          "region": "NR",
-          "state": "Rajasthan",
-          "substation": "Ramgarh",
-          "application_id": "2200000672",
-          "applicant": "Tata Power Renewable Energy Limited",
-          "generation_type": "Solar",
-          "installed_capacity_mw": "600",
-          "deemed_gna_mw": "600"
-        }
-      ],
-      "highlight": "neutral"
     }
   ]
 }
