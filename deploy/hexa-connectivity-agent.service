@@ -1,0 +1,19 @@
+[Unit]
+Description=HEXA Transmission Connectivity Automation Agent (daily mailer)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hexa
+Group=hexa
+WorkingDirectory=/opt/hexa-connectivity-agent
+EnvironmentFile=/opt/hexa-connectivity-agent/.env
+ExecStart=/opt/hexa-connectivity-agent/.venv/bin/python /opt/hexa-connectivity-agent/main.py schedule
+Restart=on-failure
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

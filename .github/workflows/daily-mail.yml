@@ -1,0 +1,68 @@
+name: Daily Transmission Connectivity Mail
+
+on:
+  schedule:
+    # 23:00 IST = 17:30 UTC. GitHub Actions cron is in UTC.
+    - cron: "30 17 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-mail
+  cancel-in-progress: false
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SOURCE_URL: ${{ vars.SOURCE_URL || 'https://www.ctuil.in/connectivity-effective-list' }}
+      MAX_PAGES: ${{ vars.MAX_PAGES || '0' }}
+      FILTER_REGION: ${{ vars.FILTER_REGION }}
+      FILTER_STATE: ${{ vars.FILTER_STATE }}
+      FILTER_TYPE: ${{ vars.FILTER_TYPE }}
+      SMTP_HOST: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
+      SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+      SMTP_USE_TLS: ${{ vars.SMTP_USE_TLS || 'true' }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      MAIL_FROM: ${{ vars.MAIL_FROM }}
+      MAIL_TO: ${{ vars.MAIL_TO }}
+      TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Kolkata' }}
+      DATA_DIR: ./data
+      SEND_ON_NO_CHANGE: ${{ vars.SEND_ON_NO_CHANGE || 'true' }}
+      DRY_RUN: ${{ vars.DRY_RUN || 'false' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Restore last snapshot
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: hexa-snapshot-${{ github.run_id }}
+          restore-keys: |
+            hexa-snapshot-
+
+      - name: Run agent
+        run: python main.py --log-level INFO run
+
+      - name: Save snapshot for next run
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data
+          key: hexa-snapshot-${{ github.run_id }}
