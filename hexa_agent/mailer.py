@@ -66,7 +66,11 @@ def send_email(
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = cfg.mail_from
-    msg["To"] = ", ".join(to_list)
+    # Privacy: real recipients go in Bcc so they cannot see each other.
+    # The visible "To" header shows just the sender so the email is well
+    # formed (some SMTP servers reject mail with no To header).
+    msg["To"] = cfg.mail_from
+    msg["Bcc"] = ", ".join(to_list)
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
 
