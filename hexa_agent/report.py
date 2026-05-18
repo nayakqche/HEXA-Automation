@@ -64,8 +64,8 @@ _HTML_TEMPLATE = _env.from_string(
 {{ table(diff.removed, "removed") }}
 {% endif %}
 
-<h2>Current snapshot &mdash; first {{ preview|length }} of {{ records|length }}</h2>
-{{ table(preview, "") }}
+<h2>Current snapshot &mdash; {{ records|length }} records</h2>
+{{ table(records, "") }}
 
 <div class="footer">
   Sent by the HEXA Transmission Connectivity Automation Agent.
@@ -112,16 +112,13 @@ def render_html(
     scrape: ScrapeResult,
     diff: Diff,
     generated_at: datetime,
-    preview_limit: int = 25,
 ) -> str:
-    preview = scrape.records[:preview_limit]
     return _HTML_TEMPLATE.render(
         generated_at=generated_at.strftime("%Y-%m-%d %H:%M %Z"),
         source_url=scrape.source_url,
         total_displayed=scrape.total_displayed,
         pages_scraped=scrape.pages_scraped,
         records=scrape.records,
-        preview=preview,
         diff=diff,
         table=_render_table,
     )
@@ -132,7 +129,6 @@ def render_text(
     scrape: ScrapeResult,
     diff: Diff,
     generated_at: datetime,
-    preview_limit: int = 25,
 ) -> str:
     lines: list[str] = []
     lines.append("Daily Transmission Connectivity Report")
@@ -163,10 +159,7 @@ def render_text(
 
     _dump("New entries", diff.added)
     _dump("Removed entries", diff.removed)
-    _dump(
-        f"Current snapshot (first {min(preview_limit, len(scrape.records))})",
-        scrape.records[:preview_limit],
-    )
+    _dump("Current snapshot", scrape.records)
 
     lines.append("-- HEXA Transmission Connectivity Automation Agent --")
     return "\n".join(lines)

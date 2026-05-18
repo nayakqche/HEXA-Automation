@@ -63,3 +63,23 @@ def test_render_html_and_text_contain_key_values():
     subject = build_subject(scrape, diff, now)
     assert "2026-05-18" in subject
     assert "2 records" in subject
+
+
+def test_render_current_snapshot_includes_all_records():
+    records = [_rec(f"A{i}") for i in range(1, 31)]
+    scrape = ScrapeResult(
+        source_url="https://x.test/list",
+        records=records,
+        pages_scraped=2,
+        total_displayed="Displaying 1 to 30 of 30",
+    )
+    diff = diff_snapshots([], records)
+    now = datetime(2026, 5, 18, 23, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+
+    html = render_html(scrape=scrape, diff=diff, generated_at=now)
+    text = render_text(scrape=scrape, diff=diff, generated_at=now)
+
+    assert "Current snapshot &mdash; 30 records" in html
+    assert "A30" in html
+    assert "== Current snapshot (30) ==" in text
+    assert "A30" in text
